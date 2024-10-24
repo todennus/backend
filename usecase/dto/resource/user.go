@@ -1,0 +1,42 @@
+package resource
+
+import (
+	"context"
+
+	"github.com/todennus/backend/domain"
+	"github.com/todennus/x/enum"
+	"github.com/xybor-x/snowflake"
+)
+
+type User struct {
+	ID          snowflake.ID
+	Username    string
+	DisplayName string
+	Role        enum.Enum[domain.UserRole]
+}
+
+func NewUser(ctx context.Context, user *domain.User) *User {
+	usecaseUser := &User{
+		ID:          user.ID,
+		Username:    user.Username,
+		DisplayName: user.DisplayName,
+		Role:        user.Role,
+	}
+
+	Set(ctx, &usecaseUser.Role, enum.Default[domain.UserRole]()).
+		WhenRequestUserNot(user.ID).
+		WhenNotContainsScope(domain.ScopeEngine.New(domain.Actions.Read, domain.Resources.User.Role))
+
+	return usecaseUser
+}
+
+func NewUserWithoutFilter(user *domain.User) *User {
+	usecaseUser := &User{
+		ID:          user.ID,
+		Username:    user.Username,
+		DisplayName: user.DisplayName,
+		Role:        user.Role,
+	}
+
+	return usecaseUser
+}
