@@ -2,12 +2,12 @@ package rest
 
 import (
 	"fmt"
+	"log/slog"
 	"net/http"
 
 	"github.com/spf13/cobra"
-	"github.com/todennus/backend/adapter/rest"
-	"github.com/todennus/backend/wiring"
-	"github.com/todennus/x/xcontext"
+	"github.com/todennus/oauth2-service/adapter/rest"
+	"github.com/todennus/oauth2-service/wiring"
 )
 
 var Command = &cobra.Command{
@@ -19,15 +19,15 @@ var Command = &cobra.Command{
 			panic(err)
 		}
 
-		system, ctx, err := wiring.InitializeSystem(envPaths...)
+		system, err := wiring.InitializeSystem(envPaths...)
 		if err != nil {
 			panic(err)
 		}
 
 		address := fmt.Sprintf("%s:%d", system.Config.Variable.Server.Host, system.Config.Variable.Server.Port)
-		app := rest.App(system.Config, system.Infras, system.Usecases)
+		app := rest.App(system.Config, system.Usecases)
 
-		xcontext.Logger(ctx).Info("Server started", "address", address)
+		slog.Info("Server started", "address", address)
 		if err := http.ListenAndServe(address, app); err != nil {
 			panic(err)
 		}

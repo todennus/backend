@@ -3,7 +3,7 @@ package model
 import (
 	"time"
 
-	"github.com/todennus/backend/domain"
+	"github.com/todennus/oauth2-service/domain"
 	"github.com/xybor-x/snowflake"
 )
 

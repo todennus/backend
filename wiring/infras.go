@@ -3,63 +3,40 @@ package wiring
 import (
 	"context"
 
-	"github.com/todennus/config"
-	"github.com/todennus/x/logging"
-	"github.com/todennus/x/session"
-	"github.com/todennus/x/token"
-	"github.com/todennus/x/xcontext"
-	"github.com/xybor-x/snowflake"
+	"github.com/redis/go-redis/v9"
+	"github.com/todennus/migration/postgres"
+	"github.com/todennus/shared/config"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"gorm.io/gorm"
 )
 
 type Infras struct {
-	Logger         logging.Logger
-	SnowflakeNode  int64
-	TokenEngine    token.Engine
-	SessionManager *session.Manager
+	GormPostgres *gorm.DB
+	Redis        *redis.Client
+	UsergRPCConn *grpc.ClientConn
 }
 
-func InitializeInfras(config *config.Config) (*Infras, error) {
-	infras := &Infras{}
+func InitializeInfras(ctx context.Context, config *config.Config) (*Infras, error) {
+	infras := Infras{}
+	var err error
 
-	// Logger
-	infras.Logger = logging.NewSLogger(logging.Level(config.Variable.Server.LogLevel))
-
-	// Snowflake node
-	infras.SnowflakeNode = int64(config.Variable.Server.NodeID)
-
-	// Token engine
-	tokenEngine := token.NewJWTEngine()
-
-	authSecrets := config.Secret.Authentication
-	if authSecrets.TokenRSAPrivateKey != "" && authSecrets.TokenRSAPublicKey != "" {
-		err := tokenEngine.WithRSA(authSecrets.TokenRSAPrivateKey, authSecrets.TokenRSAPublicKey)
-		if err != nil {
-			return infras, err
-		}
-	}
-
-	if authSecrets.TokenHMACSecretKey != "" {
-		if err := tokenEngine.WithHMAC(authSecrets.TokenHMACSecretKey); err != nil {
-			return infras, err
-		}
-	}
-
-	infras.TokenEngine = tokenEngine
-	infras.SessionManager = session.NewManager("/", config.Variable.Session.Expiration)
-
-	return infras, nil
-}
-
-func WithInfras(ctx context.Context, infras *Infras) context.Context {
-	ctx = xcontext.WithLogger(ctx, infras.Logger)
-	ctx = xcontext.WithSessionManager(ctx, infras.SessionManager)
-	return ctx
-}
-
-func (infras *Infras) NewSnowflakeNode() *snowflake.Node {
-	result, err := snowflake.NewNode(infras.SnowflakeNode)
+	infras.GormPostgres, err = postgres.Initialize(ctx, config)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	return result
+
+	infras.Redis = redis.NewClient(&redis.Options{
+		Addr:     config.Variable.Redis.Addr,
+		DB:       config.Variable.Redis.DB,
+		Username: config.Secret.Redis.Username,
+		Password: config.Secret.Redis.Password,
+	})
+
+	infras.UsergRPCConn, err = grpc.NewClient(
+		config.Variable.Service.UserGRPCAddr,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+
+	return &infras, nil
 }

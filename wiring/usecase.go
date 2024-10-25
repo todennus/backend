@@ -4,14 +4,13 @@ import (
 	"context"
 	"time"
 
-	"github.com/todennus/backend/adapter/abstraction"
-	"github.com/todennus/backend/usecase"
-	"github.com/todennus/config"
+	"github.com/todennus/oauth2-service/adapter/abstraction"
+	"github.com/todennus/oauth2-service/usecase"
+	"github.com/todennus/shared/config"
 	"github.com/todennus/x/lock"
 )
 
 type Usecases struct {
-	abstraction.UserUsecase
 	abstraction.OAuth2Usecase
 	abstraction.OAuth2ClientUsecase
 }
@@ -20,23 +19,15 @@ func InitializeUsecases(
 	ctx context.Context,
 	config *config.Config,
 	infras *Infras,
-	databases *Databases,
 	domains *Domains,
 	repositories *Repositories,
 ) (*Usecases, error) {
 	uc := &Usecases{}
 
-	uc.UserUsecase = usecase.NewUserUsecase(
-		lock.NewRedisLock(databases.Redis, "user-lock", 10*time.Second),
-		repositories.UserRepository,
-		domains.UserDomain,
-	)
-
 	uc.OAuth2Usecase = usecase.NewOAuth2Usecase(
-		infras.TokenEngine,
+		config.TokenEngine,
 		config.Variable.OAuth2.IdPLoginURL,
 		config.Secret.OAuth2.IdPSecret,
-		domains.UserDomain,
 		domains.OAuth2FlowDomain,
 		domains.OAuth2ClientDomain,
 		domains.OAuth2ConsentDomain,
@@ -49,8 +40,7 @@ func InitializeUsecases(
 	)
 
 	uc.OAuth2ClientUsecase = usecase.NewOAuth2ClientUsecase(
-		lock.NewRedisLock(databases.Redis, "client-lock", 10*time.Second),
-		domains.UserDomain,
+		lock.NewRedisLock(infras.Redis, "client-lock", 10*time.Second),
 		domains.OAuth2ClientDomain,
 		repositories.UserRepository,
 		repositories.OAuth2ClientRepository,

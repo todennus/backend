@@ -3,9 +3,9 @@ package gorm
 import (
 	"context"
 
-	"github.com/todennus/backend/domain"
-	"github.com/todennus/backend/infras/database"
-	"github.com/todennus/backend/infras/database/model"
+	"github.com/todennus/oauth2-service/domain"
+	"github.com/todennus/oauth2-service/infras/database/model"
+	"github.com/todennus/shared/errordef"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -20,7 +20,7 @@ func NewOAuth2ConsentRepository(db *gorm.DB) *OAuth2ConsentRepository {
 
 func (repo *OAuth2ConsentRepository) Upsert(ctx context.Context, consent *domain.OAuth2Consent) error {
 	model := model.NewOAuth2Consent(consent)
-	return database.ConvertError(
+	return errordef.ConvertGormError(
 		repo.db.WithContext(ctx).Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "user_id"}, {Name: "client_id"}},
 			DoUpdates: clause.AssignmentColumns([]string{"scope", "expires_at", "updated_at"}),
@@ -31,7 +31,7 @@ func (repo *OAuth2ConsentRepository) Upsert(ctx context.Context, consent *domain
 func (repo *OAuth2ConsentRepository) Get(ctx context.Context, userID, clientID int64) (*domain.OAuth2Consent, error) {
 	model := model.OAuth2ConsentModel{}
 	if err := repo.db.WithContext(ctx).Take(&model, "user_id=? AND client_id=?", userID, clientID).Error; err != nil {
-		return nil, database.ConvertError(err)
+		return nil, errordef.ConvertGormError(err)
 	}
 
 	return model.To(), nil

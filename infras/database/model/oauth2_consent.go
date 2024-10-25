@@ -3,7 +3,8 @@ package model
 import (
 	"time"
 
-	"github.com/todennus/backend/domain"
+	"github.com/todennus/oauth2-service/domain"
+	"github.com/todennus/shared/scopedef"
 	"github.com/xybor-x/snowflake"
 )
 
@@ -26,7 +27,7 @@ func (model *OAuth2ConsentResultModel) To(userID, clientID int64) *domain.OAuth2
 		UserID:    snowflake.ID(userID),
 		ClientID:  snowflake.ID(clientID),
 		Accepted:  model.Accepted,
-		Scope:     domain.ScopeEngine.ParseScopes(model.Scope),
+		Scope:     scopedef.Engine.ParseScopes(model.Scope),
 		ExpiresAt: time.UnixMilli(model.ExpiresAt),
 	}
 }
@@ -59,7 +60,7 @@ func (model OAuth2ConsentModel) To() *domain.OAuth2Consent {
 	return &domain.OAuth2Consent{
 		UserID:    snowflake.ID(model.UserID),
 		ClientID:  snowflake.ID(model.ClientID),
-		Scope:     domain.ScopeEngine.ParseScopes(model.Scope),
+		Scope:     scopedef.Engine.ParseScopes(model.Scope),
 		CreatedAt: model.CreatedAt,
 		UpdatedAt: model.UpdatedAt,
 		ExpiresAt: model.ExpiresAt,

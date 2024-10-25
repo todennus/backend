@@ -1,7 +1,7 @@
 package resource
 
 import (
-	"github.com/todennus/backend/usecase/dto/resource"
+	"github.com/todennus/oauth2-service/usecase/dto/resource"
 )
 
 type User struct {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/todennus/shared/errordef"
 	"github.com/todennus/x/scope"
 	"github.com/xybor-x/snowflake"
 )
@@ -39,7 +40,7 @@ func NewOAuth2ConsentDomain(
 	}
 }
 
-func (domain *OAuth2ConsentDomain) CreateConsentDeniedResult(userID, clientID snowflake.ID) *OAuth2ConsentResult {
+func (domain *OAuth2ConsentDomain) NewConsentDeniedResult(userID, clientID snowflake.ID) *OAuth2ConsentResult {
 	return &OAuth2ConsentResult{
 		Accepted:  false,
 		UserID:    userID,
@@ -48,7 +49,7 @@ func (domain *OAuth2ConsentDomain) CreateConsentDeniedResult(userID, clientID sn
 	}
 }
 
-func (domain *OAuth2ConsentDomain) CreateConsentAcceptedResult(userID, clientID snowflake.ID, scope scope.Scopes) *OAuth2ConsentResult {
+func (domain *OAuth2ConsentDomain) NewConsentAcceptedResult(userID, clientID snowflake.ID, scope scope.Scopes) *OAuth2ConsentResult {
 	return &OAuth2ConsentResult{
 		Accepted:  true,
 		UserID:    userID,
@@ -58,7 +59,7 @@ func (domain *OAuth2ConsentDomain) CreateConsentAcceptedResult(userID, clientID 
 	}
 }
 
-func (domain *OAuth2ConsentDomain) CreateConsent(
+func (domain *OAuth2ConsentDomain) NewConsent(
 	userID, clientID snowflake.ID,
 	scope scope.Scopes,
 ) *OAuth2Consent {
@@ -72,11 +73,11 @@ func (domain *OAuth2ConsentDomain) CreateConsent(
 
 func (domain *OAuth2ConsentDomain) ValidateConsent(consent *OAuth2Consent, requestedScope scope.Scopes) error {
 	if consent.ExpiresAt.Before(time.Now()) {
-		return fmt.Errorf("%w%s", ErrKnown, "consent expired")
+		return fmt.Errorf("%w%s", errordef.ErrDomainKnown, "consent expired")
 	}
 
 	if !requestedScope.LessThanOrEqual(consent.Scope) {
-		return fmt.Errorf("%w%s", ErrKnown, "requested scope exceeds the consented scope")
+		return fmt.Errorf("%w%s", errordef.ErrDomainKnown, "requested scope exceeds the consented scope")
 	}
 
 	return nil

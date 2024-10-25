@@ -3,8 +3,8 @@ package gorm
 import (
 	"context"
 
-	"github.com/todennus/backend/infras/database"
-	"github.com/todennus/backend/infras/database/model"
+	"github.com/todennus/oauth2-service/infras/database/model"
+	"github.com/todennus/shared/errordef"
 	"gorm.io/gorm"
 )
 
@@ -22,7 +22,7 @@ func (repo *RefreshTokenRepository) Create(
 	accessTokenID int64,
 	seq int,
 ) error {
-	return database.ConvertError(repo.db.WithContext(ctx).Create(&model.RefreshTokenModel{
+	return errordef.ConvertGormError(repo.db.WithContext(ctx).Create(&model.RefreshTokenModel{
 		RefreshTokenID: refreshTokenId,
 		AccessTokenID:  accessTokenID,
 		Seq:            seq,
@@ -42,14 +42,14 @@ func (repo *RefreshTokenRepository) UpdateByRefreshTokenID(
 		})
 
 	if result.RowsAffected == 0 {
-		return database.ErrRecordNotFound
+		return errordef.ErrNotFound
 	}
 
-	return database.ConvertError(result.Error)
+	return errordef.ConvertGormError(result.Error)
 }
 
 func (repo *RefreshTokenRepository) DeleteByRefreshTokenID(
 	ctx context.Context, refreshTokenID int64,
 ) error {
-	return database.ConvertError(repo.db.WithContext(ctx).Delete(&model.RefreshTokenModel{}, refreshTokenID).Error)
+	return errordef.ConvertGormError(repo.db.WithContext(ctx).Delete(&model.RefreshTokenModel{}, refreshTokenID).Error)
 }

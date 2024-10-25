@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/todennus/backend/adapter/rest/standard"
-	"github.com/todennus/backend/usecase"
-	"github.com/todennus/backend/usecase/dto"
+	"github.com/todennus/oauth2-service/usecase/dto"
+	"github.com/todennus/shared/errordef"
+	"github.com/todennus/shared/response"
 	"github.com/todennus/x/xerror"
 	"github.com/todennus/x/xhttp"
 	"github.com/xybor-x/snowflake"
@@ -108,7 +108,7 @@ func NewOAuth2AuthorizeRedirectURI(
 	if resp.IdpURL != "" {
 		u, err := url.Parse(resp.IdpURL)
 		if err != nil {
-			return "", usecase.ErrServer.Hide(err, "invalid-idp-url", "url", resp.IdpURL)
+			return "", errordef.ErrServer.Hide(err, "invalid-idp-url", "url", resp.IdpURL)
 		}
 
 		q := u.Query()
@@ -124,7 +124,7 @@ func NewOAuth2AuthorizeRedirectURI(
 
 	u, err := url.Parse(req.RedirectURI)
 	if err != nil {
-		return "", xerror.Enrich(usecase.ErrRequestInvalid, "invalid redirect uri").
+		return "", xerror.Enrich(errordef.ErrRequestInvalid, "invalid redirect uri").
 			Hide(err, "invalid-redirect-url", "url", req.RedirectURI)
 	}
 
@@ -158,16 +158,16 @@ func NewOAuth2AuthorizeRedirectURIWithError(
 ) (string, error) {
 	u, uerr := xhttp.ParseURL(req.RedirectURI)
 	if uerr != nil {
-		return "", xerror.Enrich(usecase.ErrRequestInvalid, "invalid redirect uri").
+		return "", xerror.Enrich(errordef.ErrRequestInvalid, "invalid redirect uri").
 			Hide(err, "invalid-redirect-uri", "uri", req.RedirectURI)
 	}
 
-	if timeoutErr := context.Cause(ctx); timeoutErr != nil && errors.Is(timeoutErr, usecase.ErrServerTimeout) {
-		err = usecase.ErrServerTimeout.Hide(err, "timeout")
+	if timeoutErr := context.Cause(ctx); timeoutErr != nil && errors.Is(timeoutErr, errordef.ErrServerTimeout) {
+		err = errordef.ErrServerTimeout.Hide(err, "timeout")
 	}
 
 	q := u.Query()
-	standard.SetQuery(ctx, q, err)
+	response.SetQuery(ctx, q, err)
 	if req.State != "" {
 		q.Set("state", req.State)
 	}
@@ -188,7 +188,7 @@ type OAuth2AuthenticationCallbackRequest struct {
 func (req OAuth2AuthenticationCallbackRequest) To() (*dto.OAuth2AuthenticationCallbackRequest, error) {
 	uid, err := snowflake.ParseString(req.UserID)
 	if err != nil {
-		return nil, xerror.Enrich(usecase.ErrRequestInvalid, "invalid user id").
+		return nil, xerror.Enrich(errordef.ErrRequestInvalid, "invalid user id").
 			Hide(err, "invalid-user-id", "uid", req.UserID)
 	}
 

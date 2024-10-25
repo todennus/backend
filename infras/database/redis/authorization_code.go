@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
-	"github.com/todennus/backend/domain"
-	"github.com/todennus/backend/infras/database"
-	"github.com/todennus/backend/infras/database/model"
+	"github.com/todennus/oauth2-service/domain"
+	"github.com/todennus/oauth2-service/infras/database/model"
+	"github.com/todennus/shared/errordef"
 )
 
 func oauth2AuthorizationCodeKey(code string) string {
@@ -45,7 +45,7 @@ func (repo *OAuth2AuthorizationCodeRepository) SaveAuthorizationCode(
 		return err
 	}
 
-	return database.ConvertError(repo.client.SetEx(ctx,
+	return errordef.ConvertRedisError(repo.client.SetEx(ctx,
 		oauth2AuthorizationCodeKey(model.Code), modelJSON, time.Until(code.ExpiresAt)).Err())
 }
 
@@ -55,7 +55,7 @@ func (repo *OAuth2AuthorizationCodeRepository) LoadAuthorizationCode(
 ) (*domain.OAuth2AuthorizationCode, error) {
 	result, err := repo.client.Get(ctx, oauth2AuthorizationCodeKey(code)).Result()
 	if err != nil {
-		return nil, database.ConvertError(err)
+		return nil, errordef.ConvertRedisError(err)
 	}
 
 	model := model.OAuth2AuthorizationCodeModel{Code: code}
@@ -70,7 +70,7 @@ func (repo *OAuth2AuthorizationCodeRepository) DeleteAuthorizationCode(
 	ctx context.Context,
 	code string,
 ) error {
-	return database.ConvertError(repo.client.Del(ctx, oauth2AuthorizationCodeKey(code)).Err())
+	return errordef.ConvertRedisError(repo.client.Del(ctx, oauth2AuthorizationCodeKey(code)).Err())
 }
 
 func (repo *OAuth2AuthorizationCodeRepository) SaveAuthorizationStore(
@@ -84,7 +84,7 @@ func (repo *OAuth2AuthorizationCodeRepository) SaveAuthorizationStore(
 		return err
 	}
 
-	return database.ConvertError(repo.client.SetEx(ctx,
+	return errordef.ConvertRedisError(repo.client.SetEx(ctx,
 		oauth2AuthorizationStoreKey(model.ID), modelJSON, time.Until(store.ExpiresAt)).Err())
 }
 
@@ -94,7 +94,7 @@ func (repo *OAuth2AuthorizationCodeRepository) LoadAuthorizationStore(
 ) (*domain.OAuth2AuthorizationStore, error) {
 	result, err := repo.client.Get(ctx, oauth2AuthorizationStoreKey(id)).Result()
 	if err != nil {
-		return nil, database.ConvertError(err)
+		return nil, errordef.ConvertRedisError(err)
 	}
 
 	model := model.OAuth2AuthorizationStoreModel{ID: id}
@@ -109,7 +109,7 @@ func (repo *OAuth2AuthorizationCodeRepository) DeleteAuthorizationStore(
 	ctx context.Context,
 	id string,
 ) error {
-	return database.ConvertError(repo.client.Del(ctx, oauth2AuthorizationStoreKey(id)).Err())
+	return errordef.ConvertRedisError(repo.client.Del(ctx, oauth2AuthorizationStoreKey(id)).Err())
 }
 
 func (repo *OAuth2AuthorizationCodeRepository) SaveAuthenticationResult(
@@ -123,7 +123,7 @@ func (repo *OAuth2AuthorizationCodeRepository) SaveAuthenticationResult(
 		return err
 	}
 
-	return database.ConvertError(repo.client.SetEx(ctx,
+	return errordef.ConvertRedisError(repo.client.SetEx(ctx,
 		oauth2AuthenticationResultKey(model.ID), modelJSON, time.Until(result.ExpiresAt)).Err())
 }
 
@@ -133,7 +133,7 @@ func (repo *OAuth2AuthorizationCodeRepository) LoadAuthenticationResult(
 ) (*domain.OAuth2AuthenticationResult, error) {
 	result, err := repo.client.Get(ctx, oauth2AuthenticationResultKey(id)).Result()
 	if err != nil {
-		return nil, database.ConvertError(err)
+		return nil, errordef.ConvertRedisError(err)
 	}
 
 	model := model.OAuth2LoginResultModel{ID: id}
@@ -145,5 +145,5 @@ func (repo *OAuth2AuthorizationCodeRepository) LoadAuthenticationResult(
 }
 
 func (repo *OAuth2AuthorizationCodeRepository) DeleteAuthenticationResult(ctx context.Context, id string) error {
-	return database.ConvertError(repo.client.Del(ctx, oauth2AuthenticationResultKey(id)).Err())
+	return errordef.ConvertRedisError(repo.client.Del(ctx, oauth2AuthenticationResultKey(id)).Err())
 }

@@ -3,12 +3,13 @@ package wiring
 import (
 	"context"
 
-	"github.com/todennus/backend/infras/database/composite"
-	"github.com/todennus/backend/infras/database/gorm"
-	"github.com/todennus/backend/infras/database/model"
-	"github.com/todennus/backend/infras/database/redis"
-	"github.com/todennus/backend/usecase/abstraction"
-	"github.com/todennus/config"
+	"github.com/todennus/oauth2-service/infras/database/composite"
+	"github.com/todennus/oauth2-service/infras/database/gorm"
+	"github.com/todennus/oauth2-service/infras/database/model"
+	"github.com/todennus/oauth2-service/infras/database/redis"
+	"github.com/todennus/oauth2-service/infras/service/grpc"
+	"github.com/todennus/oauth2-service/usecase/abstraction"
+	"github.com/todennus/shared/config"
 	"github.com/todennus/x/session"
 	"github.com/todennus/x/xcrypto"
 )
@@ -22,19 +23,19 @@ type Repositories struct {
 	abstraction.OAuth2ConsentRepository
 }
 
-func InitializeRepositories(ctx context.Context, config *config.Config, db *Databases) (*Repositories, error) {
+func InitializeRepositories(ctx context.Context, config *config.Config, infras *Infras) (*Repositories, error) {
 	r := &Repositories{}
 
-	r.UserRepository = gorm.NewUserRepository(db.GormPostgres)
-	r.RefreshTokenRepository = gorm.NewRefreshTokenRepository(db.GormPostgres)
-	r.OAuth2ClientRepository = gorm.NewOAuth2ClientRepository(db.GormPostgres)
+	r.UserRepository = grpc.NewUserRepository(infras.UsergRPCConn)
+	r.RefreshTokenRepository = gorm.NewRefreshTokenRepository(infras.GormPostgres)
+	r.OAuth2ClientRepository = gorm.NewOAuth2ClientRepository(infras.GormPostgres)
 	r.SessionRepository = gorm.NewSessionRepository(
 		session.NewCookieStore[model.SessionModel](
 			[]byte(config.Secret.Session.AuthenticationKey),
 			xcrypto.GenerateAESKeyFromPassword(config.Secret.Session.EncryptionKey, 32),
 		))
-	r.OAuth2AuthorizationCodeRepository = redis.NewOAuth2AuthorizationCodeRepository(db.Redis)
-	r.OAuth2ConsentRepository = composite.NewOAuth2ConsentRepository(db.GormPostgres, db.Redis)
+	r.OAuth2AuthorizationCodeRepository = redis.NewOAuth2AuthorizationCodeRepository(infras.Redis)
+	r.OAuth2ConsentRepository = composite.NewOAuth2ConsentRepository(infras.GormPostgres, infras.Redis)
 
 	return r, nil
 }

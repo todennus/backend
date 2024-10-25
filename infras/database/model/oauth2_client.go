@@ -3,7 +3,8 @@ package model
 import (
 	"time"
 
-	"github.com/todennus/backend/domain"
+	"github.com/todennus/oauth2-service/domain"
+	"github.com/todennus/shared/scopedef"
 	"github.com/xybor-x/snowflake"
 )
 
@@ -40,7 +41,7 @@ func (client OAuth2ClientModel) To() *domain.OAuth2Client {
 		Name:           client.Name,
 		HashedSecret:   client.HashedSecret,
 		IsConfidential: client.IsConfidential,
-		AllowedScope:   domain.ScopeEngine.ParseScopes(client.AllowedScope),
+		AllowedScope:   scopedef.Engine.ParseScopes(client.AllowedScope),
 		UpdatedAt:      client.UpdatedAt,
 	}
 }
