@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/todennus/shared/enumdef"
+	"github.com/todennus/shared/errordef"
+	"github.com/todennus/x/enum"
 	"github.com/todennus/x/scope"
 	"github.com/todennus/x/xcrypto"
 	"github.com/xybor-x/snowflake"
@@ -83,6 +86,13 @@ type OAuth2RefreshToken struct {
 	Scope          scope.Scopes
 }
 
+type User struct {
+	ID          snowflake.ID
+	Username    string
+	DisplayName string
+	Role        enum.Enum[enumdef.UserRole]
+}
+
 type OAuth2IDToken struct {
 	Metadata *OAuth2TokenMedata
 	User     *User
@@ -129,7 +139,7 @@ func NewOAuth2FlowDomain(
 	}, nil
 }
 
-func (domain *OAuth2FlowDomain) CreateAuthorizationCode(
+func (domain *OAuth2FlowDomain) NewAuthorizationCode(
 	userID, clientID snowflake.ID,
 	scope scope.Scopes,
 	codeChallenge, codeChallengeMethod string,
@@ -145,7 +155,7 @@ func (domain *OAuth2FlowDomain) CreateAuthorizationCode(
 	}
 }
 
-func (domain *OAuth2FlowDomain) CreateAuthorizationStore(
+func (domain *OAuth2FlowDomain) NewAuthorizationStore(
 	respType string,
 	clientID snowflake.ID,
 	scope scope.Scopes,
@@ -165,7 +175,7 @@ func (domain *OAuth2FlowDomain) CreateAuthorizationStore(
 	}
 }
 
-func (domain *OAuth2FlowDomain) CreateAuthenticationResultSuccess(
+func (domain *OAuth2FlowDomain) NewAuthenticationResultSuccess(
 	authID string,
 	userID snowflake.ID,
 	username string,
@@ -180,7 +190,7 @@ func (domain *OAuth2FlowDomain) CreateAuthenticationResultSuccess(
 	}
 }
 
-func (domain *OAuth2FlowDomain) CreateAuthenticationResultFailure(authID string, err string) *OAuth2AuthenticationResult {
+func (domain *OAuth2FlowDomain) NewAuthenticationResultFailure(authID string, err string) *OAuth2AuthenticationResult {
 	return &OAuth2AuthenticationResult{
 		ID:              xcrypto.RandString(32),
 		Ok:              false,
@@ -190,14 +200,14 @@ func (domain *OAuth2FlowDomain) CreateAuthenticationResultFailure(authID string,
 	}
 }
 
-func (domain *OAuth2FlowDomain) CreateAccessToken(aud string, scope scope.Scopes, user *User) *OAuth2AccessToken {
+func (domain *OAuth2FlowDomain) NewAccessToken(aud string, scope scope.Scopes, user *User) *OAuth2AccessToken {
 	return &OAuth2AccessToken{
 		Metadata: domain.createMedata(aud, user.ID, domain.AccessTokenExpiration),
 		Scope:    scope,
 	}
 }
 
-func (domain *OAuth2FlowDomain) CreateRefreshToken(aud string, scope scope.Scopes, userID snowflake.ID) *OAuth2RefreshToken {
+func (domain *OAuth2FlowDomain) NewRefreshToken(aud string, scope scope.Scopes, userID snowflake.ID) *OAuth2RefreshToken {
 	return &OAuth2RefreshToken{
 		Metadata:       domain.createMedata(aud, userID, domain.RefreshTokenExpiration),
 		SequenceNumber: 0,
@@ -206,13 +216,13 @@ func (domain *OAuth2FlowDomain) CreateRefreshToken(aud string, scope scope.Scope
 }
 
 func (domain *OAuth2FlowDomain) NextRefreshToken(current *OAuth2RefreshToken) *OAuth2RefreshToken {
-	next := domain.CreateRefreshToken(current.Metadata.Audience, current.Scope, current.Metadata.Subject)
+	next := domain.NewRefreshToken(current.Metadata.Audience, current.Scope, current.Metadata.Subject)
 	next.Metadata.ID = current.Metadata.ID
 	next.SequenceNumber = current.SequenceNumber + 1
 	return next
 }
 
-func (domain *OAuth2FlowDomain) CreateIDToken(aud string, user *User) *OAuth2IDToken {
+func (domain *OAuth2FlowDomain) NewIDToken(aud string, user *User) *OAuth2IDToken {
 	return &OAuth2IDToken{
 		Metadata: domain.createMedata(aud, user.ID, domain.IDTokenExpiration),
 		User:     user,
@@ -232,7 +242,7 @@ func (domain *OAuth2FlowDomain) ValidateCodeChallenge(verifier, challenge, metho
 
 func (domain *OAuth2FlowDomain) ValidateRequestedScope(requestedScope scope.Scopes, client *OAuth2Client) error {
 	if !requestedScope.LessThanOrEqual(client.AllowedScope) {
-		return fmt.Errorf("%w%s", ErrKnown, "the requested scope is exceed the client allowed scope")
+		return fmt.Errorf("%w%s", errordef.ErrDomainKnown, "the requested scope is exceed the client allowed scope")
 	}
 
 	return nil

@@ -4,60 +4,51 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/todennus/config"
+	"github.com/todennus/shared/config"
 )
 
 type System struct {
 	Config       *config.Config
-	Infras       *Infras
 	Domains      *Domains
-	Databases    *Databases
+	Infras       *Infras
 	Repositories *Repositories
 	Usecases     *Usecases
 }
 
-func InitializeSystem(paths ...string) (*System, context.Context, error) {
+func InitializeSystem(paths ...string) (*System, error) {
 	config, err := config.Load(sources(paths)...)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to load variable and secrets, err=%w", err)
-	}
-
-	infras, err := InitializeInfras(config)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to initialize context, err=%w", err)
+		return nil, fmt.Errorf("failed to load variable and secrets, err=%w", err)
 	}
 
 	ctx := context.Background()
-	ctx = WithInfras(ctx, infras)
-
-	domains, err := InitializeDomains(ctx, config, infras)
+	domains, err := InitializeDomains(ctx, config)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to initialize domains, err=%w", err)
+		return nil, fmt.Errorf("failed to initialize domains, err=%w", err)
 	}
 
-	databases, err := InitializeDatabases(ctx, config)
+	infras, err := InitializeInfras(ctx, config)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to initialize databases, err=%w", err)
+		return nil, fmt.Errorf("failed to initialize infras, err=%w", err)
 	}
 
-	repositories, err := InitializeRepositories(ctx, config, databases)
+	repositories, err := InitializeRepositories(ctx, config, infras)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to initialize repositories, err=%w", err)
+		return nil, fmt.Errorf("failed to initialize repositories, err=%w", err)
 	}
 
-	usecases, err := InitializeUsecases(ctx, config, infras, databases, domains, repositories)
+	usecases, err := InitializeUsecases(ctx, config, infras, domains, repositories)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to initialize usecases, err=%w", err)
+		return nil, fmt.Errorf("failed to initialize usecases, err=%w", err)
 	}
 
 	return &System{
 		Config:       config,
 		Infras:       infras,
-		Databases:    databases,
 		Repositories: repositories,
 		Domains:      domains,
 		Usecases:     usecases,
-	}, ctx, nil
+	}, nil
 }
 
 func sources(paths []string) []string {

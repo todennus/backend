@@ -4,29 +4,23 @@ import (
 	"context"
 	"time"
 
-	"github.com/todennus/backend/domain"
-	"github.com/todennus/backend/usecase/abstraction"
-	"github.com/todennus/config"
+	"github.com/todennus/oauth2-service/domain"
+	"github.com/todennus/oauth2-service/usecase/abstraction"
+	"github.com/todennus/shared/config"
 )
 
 type Domains struct {
-	abstraction.UserDomain
 	abstraction.OAuth2FlowDomain
 	abstraction.OAuth2ClientDomain
 	abstraction.OAuth2ConsentDomain
 }
 
-func InitializeDomains(ctx context.Context, config *config.Config, infras *Infras) (*Domains, error) {
+func InitializeDomains(ctx context.Context, config *config.Config) (*Domains, error) {
 	var err error
 	domains := &Domains{}
 
-	domains.UserDomain, err = domain.NewUserDomain(infras.NewSnowflakeNode())
-	if err != nil {
-		return nil, err
-	}
-
 	domains.OAuth2FlowDomain, err = domain.NewOAuth2FlowDomain(
-		infras.NewSnowflakeNode(),
+		config.NewSnowflakeNode(),
 		config.Variable.Authentication.TokenIssuer,
 		time.Duration(config.Variable.OAuth2.AuthorizationCodeFlowExpiration)*time.Second,
 		time.Duration(config.Variable.OAuth2.AuthenticationCallbackExpiration)*time.Second,
@@ -41,7 +35,7 @@ func InitializeDomains(ctx context.Context, config *config.Config, infras *Infra
 	}
 
 	domains.OAuth2ClientDomain, err = domain.NewOAuth2ClientDomain(
-		infras.NewSnowflakeNode(),
+		config.NewSnowflakeNode(),
 		config.Variable.OAuth2.ClientSecretLength,
 	)
 	if err != nil {

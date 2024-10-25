@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
-	"github.com/todennus/backend/domain"
-	"github.com/todennus/backend/infras/database"
-	"github.com/todennus/backend/infras/database/model"
+	"github.com/todennus/oauth2-service/domain"
+	"github.com/todennus/oauth2-service/infras/database/model"
+	"github.com/todennus/shared/errordef"
 )
 
 func oauth2ConsentResultKey(userID, clientID int64) string {
@@ -36,7 +36,7 @@ func (repo *OAuth2ConsentResultRepository) SaveResult(
 		return err
 	}
 
-	return database.ConvertError(repo.client.SetEx(ctx, key, value, time.Until(result.ExpiresAt)).Err())
+	return errordef.ConvertRedisError(repo.client.SetEx(ctx, key, value, time.Until(result.ExpiresAt)).Err())
 }
 
 func (repo *OAuth2ConsentResultRepository) LoadResult(
@@ -45,7 +45,7 @@ func (repo *OAuth2ConsentResultRepository) LoadResult(
 ) (*domain.OAuth2ConsentResult, error) {
 	result, err := repo.client.Get(ctx, oauth2ConsentResultKey(userID, clientID)).Result()
 	if err != nil {
-		return nil, database.ConvertError(err)
+		return nil, errordef.ConvertRedisError(err)
 	}
 
 	model := model.OAuth2ConsentResultModel{}
@@ -60,5 +60,5 @@ func (repo *OAuth2ConsentResultRepository) DeleteResult(
 	ctx context.Context,
 	userID, clientID int64,
 ) error {
-	return database.ConvertError(repo.client.Del(ctx, oauth2ConsentResultKey(userID, clientID)).Err())
+	return errordef.ConvertRedisError(repo.client.Del(ctx, oauth2ConsentResultKey(userID, clientID)).Err())
 }

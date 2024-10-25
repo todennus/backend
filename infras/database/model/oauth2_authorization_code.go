@@ -3,7 +3,8 @@ package model
 import (
 	"time"
 
-	"github.com/todennus/backend/domain"
+	"github.com/todennus/oauth2-service/domain"
+	"github.com/todennus/shared/scopedef"
 	"github.com/xybor-x/snowflake"
 )
 
@@ -34,7 +35,7 @@ func (code OAuth2AuthorizationCodeModel) To() *domain.OAuth2AuthorizationCode {
 		Code:                code.Code,
 		UserID:              snowflake.ID(code.UserID),
 		ClientID:            snowflake.ID(code.ClientID),
-		Scope:               domain.ScopeEngine.ParseScopes(code.Scope),
+		Scope:               scopedef.Engine.ParseScopes(code.Scope),
 		CodeChallenge:       code.CodeChallenge,
 		CodeChallengeMethod: code.CodeChallengeMethod,
 		ExpiresAt:           time.UnixMilli(code.ExpiresAt),
@@ -76,7 +77,7 @@ func (store OAuth2AuthorizationStoreModel) To() *domain.OAuth2AuthorizationStore
 		ResponseType:        store.ResponseType,
 		ClientID:            snowflake.ID(store.ClientID),
 		RedirectURI:         store.RedirectURI,
-		Scope:               domain.ScopeEngine.ParseScopes(store.Scope),
+		Scope:               scopedef.Engine.ParseScopes(store.Scope),
 		State:               store.State,
 		CodeChallenge:       store.CodeChallenge,
 		CodeChallengeMethod: store.CodeChallengeMethod,

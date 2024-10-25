@@ -1,20 +1,19 @@
-module github.com/todennus/backend
+module github.com/todennus/oauth2-service
 
-go 1.23
+go 1.23.2
 
 require (
 	github.com/go-chi/chi/v5 v5.1.0
-	github.com/redis/go-redis/v9 v9.6.2
+	github.com/redis/go-redis/v9 v9.7.0
 	github.com/spf13/cobra v1.8.1
 	github.com/swaggo/http-swagger v1.3.4
-	github.com/swaggo/swag v1.16.4
-	github.com/todennus/config v0.1.0
-	github.com/todennus/migration v0.1.0
-	github.com/todennus/x v0.1.0
+	github.com/todennus/migration v0.1.1
+	github.com/todennus/proto v0.1.0
+	github.com/todennus/shared v0.3.1
+	github.com/todennus/x v0.1.2
 	github.com/xybor-x/snowflake v1.0.0
 	golang.org/x/crypto v0.28.0
 	google.golang.org/grpc v1.67.1
-	google.golang.org/protobuf v1.35.1
 	gorm.io/gorm v1.25.12
 )
 
@@ -45,6 +44,7 @@ require (
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/swaggo/files v1.0.1 // indirect
+	github.com/swaggo/swag v1.16.4 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	golang.org/x/net v0.30.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
@@ -52,6 +52,7 @@ require (
 	golang.org/x/text v0.19.0 // indirect
 	golang.org/x/tools v0.26.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20241021214115-324edc3d5d38 // indirect
+	google.golang.org/protobuf v1.35.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gorm.io/driver/postgres v1.5.9 // indirect
 )

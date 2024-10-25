@@ -1,8 +1,8 @@
 package dto
 
 import (
-	"github.com/todennus/backend/adapter/rest/dto/resource"
-	"github.com/todennus/backend/usecase/dto"
+	"github.com/todennus/oauth2-service/adapter/rest/dto/resource"
+	"github.com/todennus/oauth2-service/usecase/dto"
 	"github.com/xybor-x/snowflake"
 )
 

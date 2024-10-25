@@ -3,7 +3,8 @@ package resource
 import (
 	"context"
 
-	"github.com/todennus/backend/domain"
+	"github.com/todennus/oauth2-service/domain"
+	"github.com/todennus/shared/scopedef"
 	"github.com/xybor-x/snowflake"
 )
 
@@ -25,7 +26,7 @@ func NewOAuth2Client(ctx context.Context, client *domain.OAuth2Client) *OAuth2Cl
 	Filter(ctx, &usecaseClient.OwnerID).WhenRequestUserNot(client.OwnerUserID)
 	Filter(ctx, &usecaseClient.AllowedScope).
 		WhenRequestUserNot(client.OwnerUserID).
-		WhenNotContainsScope(domain.ScopeEngine.New(domain.Actions.Read, domain.Resources.Client.AllowedScope))
+		WhenNotContainsScope(scopedef.Engine.New(scopedef.Actions.Read, scopedef.Resources.Client.AllowedScope))
 
 	return usecaseClient
 }

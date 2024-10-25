@@ -1,26 +1,25 @@
 FROM golang:1.23-alpine AS build
 
-WORKDIR /backend
+WORKDIR /oauth2-service
 
 RUN apk add -U --no-cache ca-certificates
 
-COPY ./backend/go.mod .
-COPY ./backend/go.sum .
+COPY ./oauth2-service/go.mod .
+COPY ./oauth2-service/go.sum .
 
 RUN go mod download
 
 COPY . /
 
-RUN CGO_ENABLED=0 go build -ldflags="-w -s" -o /todennus ./cmd/main.go
+RUN CGO_ENABLED=0 go build -ldflags="-w -s" -o /service ./cmd/main.go
 
 FROM scratch
 
 WORKDIR /
 
-COPY --from=build /todennus /
-COPY --from=build /backend/template /template
-COPY --from=build /backend/docs /docs
+COPY --from=build /service /
+COPY --from=build /oauth2-service/template /template
 
-EXPOSE 8080 8081 8083
+EXPOSE 8080
 
-ENTRYPOINT [ "/todennus", "--env", ""]
+ENTRYPOINT [ "/service", "--env", ""]

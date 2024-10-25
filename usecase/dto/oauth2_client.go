@@ -3,8 +3,8 @@ package dto
 import (
 	"context"
 
-	"github.com/todennus/backend/domain"
-	"github.com/todennus/backend/usecase/dto/resource"
+	"github.com/todennus/oauth2-service/domain"
+	"github.com/todennus/oauth2-service/usecase/dto/resource"
 	"github.com/xybor-x/snowflake"
 )
 

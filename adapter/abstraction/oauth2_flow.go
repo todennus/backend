@@ -3,7 +3,7 @@ package abstraction
 import (
 	"context"
 
-	"github.com/todennus/backend/usecase/dto"
+	"github.com/todennus/oauth2-service/usecase/dto"
 )
 
 type OAuth2Usecase interface {

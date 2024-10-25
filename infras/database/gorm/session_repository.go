@@ -3,8 +3,8 @@ package gorm
 import (
 	"context"
 
-	"github.com/todennus/backend/domain"
-	"github.com/todennus/backend/infras/database/model"
+	"github.com/todennus/oauth2-service/domain"
+	"github.com/todennus/oauth2-service/infras/database/model"
 	"github.com/todennus/x/session"
 	"github.com/todennus/x/xcontext"
 )

@@ -2,8 +2,10 @@ package domain
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
+	"github.com/todennus/shared/scopedef"
 	"github.com/todennus/x/scope"
 	"github.com/todennus/x/xcrypto"
 	"github.com/todennus/x/xstring"
@@ -48,14 +50,14 @@ func NewOAuth2ClientDomain(
 	}, nil
 }
 
-func (domain *OAuth2ClientDomain) CreateClient(ownerID snowflake.ID, name string, isConfidential bool) (*OAuth2Client, string, error) {
+func (domain *OAuth2ClientDomain) NewClient(ownerID snowflake.ID, name string, isConfidential bool) (*OAuth2Client, string, error) {
 	err := domain.validateClientName(name)
 	if err != nil {
 		return nil, "", err
 	}
 
 	secret := ""
-	allowedScope := ScopeEngine.New(Actions.Read, Resources).AsScopes()
+	allowedScope := scopedef.Engine.New(scopedef.Actions.Read, scopedef.Resources).AsScopes()
 	hashedSecret := []byte{}
 	if isConfidential {
 		secret = xcrypto.RandString(domain.ClientSecretLength)
@@ -64,7 +66,7 @@ func (domain *OAuth2ClientDomain) CreateClient(ownerID snowflake.ID, name string
 			return nil, "", err
 		}
 
-		allowedScope = ScopeEngine.New(Actions, Resources).AsScopes()
+		allowedScope = scopedef.Engine.New(scopedef.Actions, scopedef.Resources).AsScopes()
 	}
 
 	return &OAuth2Client{
@@ -90,7 +92,7 @@ func (domain *OAuth2ClientDomain) ValidateClient(
 	switch confidentialRequirement {
 	case RequireConfidential:
 		if !client.IsConfidential {
-			return Wrap(ErrClientInvalid, "require a confidential client")
+			return fmt.Errorf("%w: require a confidential client", ErrClientInvalid)
 		}
 
 		err := ValidatePassword(client.HashedSecret, clientSecret)
@@ -112,16 +114,16 @@ func (domain *OAuth2ClientDomain) ValidateClient(
 
 func (domain *OAuth2ClientDomain) validateClientName(clientName string) error {
 	if len(clientName) > MaximumClientNameLength {
-		return Wrap(ErrClientNameInvalid, "require at most %d characters", MaximumClientNameLength)
+		return fmt.Errorf("%w: require at most %d characters", ErrClientNameInvalid, MaximumClientNameLength)
 	}
 
 	if len(clientName) < MinimumClientNameLength {
-		return Wrap(ErrClientNameInvalid, "require at least %d characters", MinimumClientNameLength)
+		return fmt.Errorf("%w: require at least %d characters", ErrClientNameInvalid, MinimumClientNameLength)
 	}
 
 	for _, c := range clientName {
 		if !xstring.IsNumber(c) && !xstring.IsLetter(c) && !xstring.IsUnderscore(c) && !xstring.IsSpace(c) {
-			return Wrap(ErrClientNameInvalid, "got an invalid character %c", c)
+			return fmt.Errorf("%w: got an invalid character %c", ErrClientNameInvalid, c)
 		}
 	}
 

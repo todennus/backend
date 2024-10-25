@@ -8,7 +8,8 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
-	"github.com/todennus/backend/infras/database/model"
+	"github.com/todennus/oauth2-service/infras/database/model"
+	"github.com/todennus/shared/errordef"
 	"github.com/todennus/x/session"
 	"github.com/todennus/x/xcrypto"
 )
@@ -68,14 +69,13 @@ func (store *RedisSessionStore) Save(ctx context.Context, session *session.Sessi
 	}
 
 	if err := store.client.SetEx(ctx, sessionKey(sid), modelJSON, store.expiration).Err(); err != nil {
-		return err
+		return errordef.ConvertRedisError(err)
 	}
 
 	// TODO: Using SAdd instead. But we need to turn on the expired event of
 	// redis, then remove the corresponding userSessions member.
-	err = store.client.SetEx(ctx, userSessionsKey(obj.UserID, sid), 1, store.expiration).Err()
-	if err != nil {
-		return err
+	if err = store.client.SetEx(ctx, userSessionsKey(obj.UserID, sid), 1, store.expiration).Err(); err != nil {
+		return errordef.ConvertRedisError(err)
 	}
 
 	session.SetID(sid)

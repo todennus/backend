@@ -2,8 +2,8 @@ package composite
 
 import (
 	"github.com/redis/go-redis/v9"
-	dbgorm "github.com/todennus/backend/infras/database/gorm"
-	dbredis "github.com/todennus/backend/infras/database/redis"
+	dbgorm "github.com/todennus/oauth2-service/infras/database/gorm"
+	dbredis "github.com/todennus/oauth2-service/infras/database/redis"
 	"gorm.io/gorm"
 )
 
