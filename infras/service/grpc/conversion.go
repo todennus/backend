@@ -16,3 +16,10 @@ func NewUser(user *resource.User) *domain.User {
 		Role:        enum.FromStr[enumdef.UserRole](user.Role),
 	}
 }
+
+func NewOAuth2Client(client *resource.OAuth2Client) *domain.OAuth2Client {
+	return &domain.OAuth2Client{
+		ID:   snowflake.ID(client.Id),
+		Name: client.Name,
+	}
+}

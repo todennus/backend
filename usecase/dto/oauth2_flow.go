@@ -85,7 +85,7 @@ type OAuth2TokenRequest struct {
 	// Resource Owner Password Credentials Flow
 	Username string
 	Password string
-	Scope    string
+	Scope    scope.Scopes
 
 	// Refresh Token Flow
 	RefreshToken string
@@ -96,19 +96,31 @@ type OAuth2TokenResponse struct {
 	TokenType    string
 	ExpiresIn    int
 	RefreshToken string
-	Scope        string
+	Scope        scope.Scopes
 }
 
 type OAuth2AuthorizeRequest struct {
 	ResponseType string
 	ClientID     snowflake.ID
 	RedirectURI  string
-	Scope        string
+	Scope        scope.Scopes
 	State        string
 
 	// Only for PKCE
 	CodeChallenge       string
 	CodeChallengeMethod string
+}
+
+func restoreOAuth2AuthorizationCode(store *domain.OAuth2AuthorizationStore) *OAuth2AuthorizeRequest {
+	return &OAuth2AuthorizeRequest{
+		ResponseType:        store.ResponseType,
+		ClientID:            store.ClientID,
+		RedirectURI:         store.RedirectURI,
+		Scope:               store.Scope,
+		State:               store.State,
+		CodeChallenge:       store.CodeChallenge,
+		CodeChallengeMethod: store.CodeChallengeMethod,
+	}
 }
 
 type OAuth2AuthorizeResponse struct {
@@ -177,15 +189,7 @@ type OAuth2SessionUpdateRequest struct {
 type OAuth2SessionUpdateResponse OAuth2AuthorizeRequest
 
 func NewOAuth2SessionUpdateResponse(store *domain.OAuth2AuthorizationStore) *OAuth2SessionUpdateResponse {
-	return &OAuth2SessionUpdateResponse{
-		ResponseType:        store.ResponseType,
-		ClientID:            store.ClientID,
-		RedirectURI:         store.RedirectURI,
-		Scope:               store.Scope.String(),
-		State:               store.State,
-		CodeChallenge:       store.CodeChallenge,
-		CodeChallengeMethod: store.CodeChallengeMethod,
-	}
+	return (*OAuth2SessionUpdateResponse)(restoreOAuth2AuthorizationCode(store))
 }
 
 type OAuth2GetConsentRequest struct {
@@ -216,13 +220,5 @@ type OAuth2UpdateConsentRequest struct {
 type OAUth2UpdateConsentResponse OAuth2AuthorizeRequest
 
 func NewOAUth2UpdateConsentResponse(store *domain.OAuth2AuthorizationStore) *OAUth2UpdateConsentResponse {
-	return &OAUth2UpdateConsentResponse{
-		ResponseType:        store.ResponseType,
-		ClientID:            store.ClientID,
-		RedirectURI:         store.RedirectURI,
-		Scope:               store.Scope.String(),
-		State:               store.State,
-		CodeChallenge:       store.CodeChallenge,
-		CodeChallengeMethod: store.CodeChallengeMethod,
-	}
+	return (*OAUth2UpdateConsentResponse)(restoreOAuth2AuthorizationCode(store))
 }

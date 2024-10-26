@@ -73,11 +73,11 @@ func (domain *OAuth2ConsentDomain) NewConsent(
 
 func (domain *OAuth2ConsentDomain) ValidateConsent(consent *OAuth2Consent, requestedScope scope.Scopes) error {
 	if consent.ExpiresAt.Before(time.Now()) {
-		return fmt.Errorf("%w%s", errordef.ErrDomainKnown, "consent expired")
+		return fmt.Errorf("%wconsent expired", errordef.ErrDomainKnown)
 	}
 
 	if !requestedScope.LessThanOrEqual(consent.Scope) {
-		return fmt.Errorf("%w%s", errordef.ErrDomainKnown, "requested scope exceeds the consented scope")
+		return fmt.Errorf("%wrequested scope exceeds the consented scope", errordef.ErrDomainKnown)
 	}
 
 	return nil

@@ -26,14 +26,11 @@ func App(
 	r.Use(middleware.Authentication(config.TokenEngine))
 	r.Use(middleware.WithSession(config.SessionManager))
 
-	oauth2FlowAdapter := NewOAuth2Adapter(usecases.OAuth2Usecase)
-	oauth2ClientAdapter := NewOAuth2ClientAdapter(usecases.OAuth2ClientUsecase)
+	oauth2FlowAdapter := NewOAuth2Adapter(usecases.OAuth2FlowUsecase, usecases.OAuth2ConsentUsecase)
+	authenticationAdapter := NewAuthenticationAdapter(usecases.OAuth2AuthenticationUsecase)
 
-	r.Get("/session/update", oauth2FlowAdapter.SessionUpdate())
-	r.Post("/auth/callback", oauth2FlowAdapter.AuthenticationCallback())
-
-	r.Route("/oauth2", oauth2FlowAdapter.OAuth2Router)
-	r.Route("/oauth2_clients", oauth2ClientAdapter.Router)
+	r.Route("/auth", authenticationAdapter.Router)
+	r.Route("/oauth2", oauth2FlowAdapter.Router)
 
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusNotFound) })
 

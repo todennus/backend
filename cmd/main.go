@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/spf13/cobra"
 	"github.com/todennus/oauth2-service/cmd/rest"
-	"github.com/todennus/oauth2-service/cmd/swagger"
 )
 
 var rootCommand = &cobra.Command{
@@ -14,7 +13,6 @@ var rootCommand = &cobra.Command{
 func main() {
 	rootCommand.PersistentFlags().StringArray("env", []string{".env"}, "environment file paths")
 	rootCommand.AddCommand(rest.Command)
-	rootCommand.AddCommand(swagger.Command)
 
 	if err := rootCommand.Execute(); err != nil {
 		panic(err)
