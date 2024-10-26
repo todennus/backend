@@ -12,7 +12,13 @@ type OAuth2FlowDomain interface {
 		scope scope.Scopes,
 		codeChallenge, codeChallengeMethod string,
 	) *domain.OAuth2AuthorizationCode
+
+	ValidateCodeChallenge(verifier, challenge, method string) bool
+}
+
+type OAuth2SessionDomain interface {
 	NewAuthorizationStore(
+		open bool,
 		respType string,
 		clientID snowflake.ID,
 		scope scope.Scopes,
@@ -21,26 +27,15 @@ type OAuth2FlowDomain interface {
 	NewAuthenticationResultSuccess(authID string, userID snowflake.ID, username string) *domain.OAuth2AuthenticationResult
 	NewAuthenticationResultFailure(authID string, err string) *domain.OAuth2AuthenticationResult
 
-	NewAccessToken(aud string, scope scope.Scopes, user *domain.User) *domain.OAuth2AccessToken
-	NewRefreshToken(aud string, scope scope.Scopes, userID snowflake.ID) *domain.OAuth2RefreshToken
-	NextRefreshToken(current *domain.OAuth2RefreshToken) *domain.OAuth2RefreshToken
-	NewIDToken(aud string, user *domain.User) *domain.OAuth2IDToken
-
-	ValidateCodeChallenge(verifier, challenge, method string) bool
-	ValidateRequestedScope(requestedScope scope.Scopes, client *domain.OAuth2Client) error
-
 	NewSession(userID snowflake.ID) *domain.Session
 	InvalidateSession(state domain.SessionState) *domain.Session
 }
 
-type OAuth2ClientDomain interface {
-	NewClient(ownerID snowflake.ID, name string, isConfidential bool) (*domain.OAuth2Client, string, error)
-	ValidateClient(
-		client *domain.OAuth2Client,
-		clientID snowflake.ID,
-		clientSecret string,
-		confidentialRequirement domain.ConfidentialRequirementType,
-	) error
+type OAuth2TokenDomain interface {
+	NewAccessToken(aud string, scope scope.Scopes, user *domain.User) *domain.OAuth2AccessToken
+	NewRefreshToken(aud string, scope scope.Scopes, userID snowflake.ID) *domain.OAuth2RefreshToken
+	NextRefreshToken(current *domain.OAuth2RefreshToken) *domain.OAuth2RefreshToken
+	NewIDToken(aud string, user *domain.User) *domain.OAuth2IDToken
 }
 
 type OAuth2ConsentDomain interface {

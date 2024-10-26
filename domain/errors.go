@@ -7,7 +7,10 @@ import (
 )
 
 var (
-	ErrMismatchedPassword = fmt.Errorf("%w%s", errordef.ErrDomainKnown, "mismatched password")
-	ErrClientInvalid      = fmt.Errorf("%w%s", errordef.ErrDomainKnown, "invalid client")
-	ErrClientNameInvalid  = fmt.Errorf("%w%s", errordef.ErrDomainKnown, "invalid client name")
+	ErrMismatchedPassword   = fmt.Errorf("%wmismatched password", errordef.ErrDomainKnown)
+	ErrClientInvalid        = fmt.Errorf("%winvalid client", errordef.ErrDomainKnown)
+	ErrClientNameInvalid    = fmt.Errorf("%winvalid client name", errordef.ErrDomainKnown)
+	ErrCodeIncorrect        = fmt.Errorf("%wcode is incorrect", errordef.ErrDomainKnown)
+	ErrCodeExpired          = fmt.Errorf("%wcode is expired", errordef.ErrDomainKnown)
+	ErrCodeVeriferIncorrect = fmt.Errorf("%wcode verifier is incorrect", errordef.ErrDomainKnown)
 )

@@ -12,9 +12,10 @@ import (
 )
 
 type Infras struct {
-	GormPostgres *gorm.DB
-	Redis        *redis.Client
-	UsergRPCConn *grpc.ClientConn
+	GormPostgres         *gorm.DB
+	Redis                *redis.Client
+	UsergRPCConn         *grpc.ClientConn
+	OAuth2ClientgRPCConn *grpc.ClientConn
 }
 
 func InitializeInfras(ctx context.Context, config *config.Config) (*Infras, error) {
@@ -35,6 +36,11 @@ func InitializeInfras(ctx context.Context, config *config.Config) (*Infras, erro
 
 	infras.UsergRPCConn, err = grpc.NewClient(
 		config.Variable.Service.UserGRPCAddr,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+
+	infras.OAuth2ClientgRPCConn, err = grpc.NewClient(
+		config.Variable.Service.OAuth2ClientGRPCAddr,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 

@@ -13,15 +13,19 @@ import (
 	"github.com/todennus/x/xhttp"
 )
 
-type OAuth2Adapter struct {
-	oauth2Usecase abstraction.OAuth2Usecase
+type OAuth2FlowAdapter struct {
+	oauth2FlowUsecase    abstraction.OAuth2FlowUsecase
+	oauth2ConsentUsecase abstraction.OAuth2ConsentUsecase
 }
 
-func NewOAuth2Adapter(oauth2Usecase abstraction.OAuth2Usecase) *OAuth2Adapter {
-	return &OAuth2Adapter{oauth2Usecase: oauth2Usecase}
+func NewOAuth2Adapter(
+	oauth2FlowUsecase abstraction.OAuth2FlowUsecase,
+	oauth2ConsentUsecase abstraction.OAuth2ConsentUsecase,
+) *OAuth2FlowAdapter {
+	return &OAuth2FlowAdapter{oauth2FlowUsecase: oauth2FlowUsecase, oauth2ConsentUsecase: oauth2ConsentUsecase}
 }
 
-func (a *OAuth2Adapter) OAuth2Router(r chi.Router) {
+func (a *OAuth2FlowAdapter) Router(r chi.Router) {
 	r.Get("/authorize", a.Authorize())
 	r.Post("/token", a.Token())
 
@@ -41,7 +45,7 @@ func (a *OAuth2Adapter) OAuth2Router(r chi.Router) {
 // @Success 303 "Redirect to client application with authorization code or error"
 // @Failure 400 {object} response.SwaggerBadRequestErrorResponse "Bad request"
 // @Router /oauth2/authorize [get]
-func (a *OAuth2Adapter) Authorize() http.HandlerFunc {
+func (a *OAuth2FlowAdapter) Authorize() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -51,7 +55,7 @@ func (a *OAuth2Adapter) Authorize() http.HandlerFunc {
 			return
 		}
 
-		resp, err := a.oauth2Usecase.Authorize(ctx, req.To())
+		resp, err := a.oauth2FlowUsecase.Authorize(ctx, req.To())
 		if err != nil {
 			if url, err := dto.NewOAuth2AuthorizeRedirectURIWithError(ctx, req, err); err != nil {
 				response.RESTWriteAndLogInvalidRequestError(ctx, w, err)
@@ -88,7 +92,7 @@ func (a *OAuth2Adapter) Authorize() http.HandlerFunc {
 // @Success 200 {object} dto.OAuth2TokenResponse "Successfully generated access token"
 // @Failure 400 {object} response.SwaggerBadRequestErrorResponse "Bad request"
 // @Router /oauth2/token [post]
-func (a *OAuth2Adapter) Token() http.HandlerFunc {
+func (a *OAuth2FlowAdapter) Token() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -98,75 +102,13 @@ func (a *OAuth2Adapter) Token() http.HandlerFunc {
 			return
 		}
 
-		resp, err := a.oauth2Usecase.Token(ctx, req.To())
+		resp, err := a.oauth2FlowUsecase.Token(ctx, req.To())
 		response.NewRESTResponseHandler(ctx, dto.NewOAuth2TokenResponse(resp), err).
 			Map(http.StatusBadRequest,
-				errordef.ErrRequestInvalid, errordef.ErrClientInvalid,
-				errordef.ErrScopeInvalid, errordef.ErrTokenInvalidGrant,
+				errordef.ErrRequestInvalid, errordef.ErrOAuth2ClientInvalid,
+				errordef.ErrOAuth2ScopeInvalid, errordef.ErrOAuth2InvalidGrant,
 			).
 			WriteHTTPResponseWithoutWrap(ctx, w)
-	}
-}
-
-// @Summary Authentication Callback Endpoint
-// @Description This endpoint is called by the IdP after it validated the user.
-// @Description It notifies to the server about the authentication result (success or failure) and the inforamtion of user.
-// @Tags OAuth2
-// @Accept json
-// @Produce json
-// @Param body body dto.OAuth2AuthenticationCallbackRequest true "Authentication result"
-// @Success 200 {object} dto.OAuth2AuthenticationCallbackResponse "Successfully accept the result"
-// @Failure 400 {object} response.SwaggerBadRequestErrorResponse "Bad request"
-// @Failure 401 {object} response.SwaggerUnauthorizedErrorResponse "Unauthorized"
-// @Failure 401 {object} response.SwaggerNotFoundErrorResponse "Not found"
-// @Router /auth/callback [post]
-func (a *OAuth2Adapter) AuthenticationCallback() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-
-		req, err := xhttp.ParseHTTPRequest[dto.OAuth2AuthenticationCallbackRequest](r)
-		if err != nil {
-			response.RESTWriteAndLogInvalidRequestError(ctx, w, err)
-			return
-		}
-
-		usecaseReq, err := req.To()
-		if err != nil {
-			response.RESTWriteAndLogInvalidRequestError(ctx, w, err)
-			return
-		}
-
-		resp, err := a.oauth2Usecase.AuthenticationCallback(ctx, usecaseReq)
-		response.NewRESTResponseHandler(ctx, dto.NewOAuth2AuthenticationCallbackResponse(resp), err).
-			Map(http.StatusBadRequest, errordef.ErrRequestInvalid).
-			Map(http.StatusNotFound, errordef.ErrNotFound).
-			Map(http.StatusUnauthorized, errordef.ErrUnauthenticated).
-			WriteHTTPResponse(ctx, w)
-	}
-}
-
-// @Summary Session Update Endpoint
-// @Description The user will be redirected to this endpoint by the IdP after it sends the authentication result to the server. <br>
-// @Description This endpoint updates the user session state to `authenticated`, `unauthenticated`, or `failed authentication`.
-// @Tags OAuth2
-// @Param authentication_id query string true "Authentication id"
-// @Success 303 "Redirect back to oauth2 authorization endpoint"
-// @Failure 400 {object} response.SwaggerBadRequestErrorResponse "Bad request"
-// @Router /session/update [get]
-func (a *OAuth2Adapter) SessionUpdate() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-
-		req, err := xhttp.ParseHTTPRequest[dto.OAuth2SessionUpdateRequest](r)
-		if err != nil {
-			response.RESTWriteAndLogInvalidRequestError(ctx, w, err)
-			return
-		}
-
-		resp, err := a.oauth2Usecase.SessionUpdate(ctx, req.To())
-		response.NewRESTResponseHandler(ctx, dto.NewOAuth2SessionUpdateRedirectURI(resp), err).
-			Map(http.StatusBadRequest, errordef.ErrRequestInvalid).
-			Redirect(ctx, w, r, http.StatusSeeOther)
 	}
 }
 
@@ -178,7 +120,7 @@ func (a *OAuth2Adapter) SessionUpdate() http.HandlerFunc {
 // @Success 200 {string} string "Consent page rendered successfully"
 // @Failure 400 {object} response.SwaggerBadRequestErrorResponse "Bad request"
 // @Router /oauth2/consent [get]
-func (a *OAuth2Adapter) GetConsentPage() http.HandlerFunc {
+func (a *OAuth2FlowAdapter) GetConsentPage() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -188,7 +130,7 @@ func (a *OAuth2Adapter) GetConsentPage() http.HandlerFunc {
 			return
 		}
 
-		resp, err := a.oauth2Usecase.GetConsent(ctx, req.To())
+		resp, err := a.oauth2ConsentUsecase.GetConsent(ctx, req.To())
 		if err != nil {
 			if errors.Is(err, errordef.ErrRequestInvalid) {
 				response.RESTWriteError(ctx, w, http.StatusBadRequest, err)
@@ -221,7 +163,7 @@ func (a *OAuth2Adapter) GetConsentPage() http.HandlerFunc {
 // @Success 303 "Redirect back to oauth2 authorization endpoint"
 // @Failure 400 {object} response.SwaggerBadRequestErrorResponse "Bad request"
 // @Router /oauth2/consent [post]
-func (a *OAuth2Adapter) UpdateConsent() http.HandlerFunc {
+func (a *OAuth2FlowAdapter) UpdateConsent() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -231,9 +173,9 @@ func (a *OAuth2Adapter) UpdateConsent() http.HandlerFunc {
 			return
 		}
 
-		resp, err := a.oauth2Usecase.UpdateConsent(ctx, req.To())
+		resp, err := a.oauth2ConsentUsecase.UpdateConsent(ctx, req.To())
 		response.NewRESTResponseHandler(ctx, dto.NewOAuth2ConsentUpdateRedirectURI(resp), err).
-			Map(http.StatusBadRequest, errordef.ErrRequestInvalid, errordef.ErrAccessDenied).
+			Map(http.StatusBadRequest, errordef.ErrRequestInvalid, errordef.ErrOAuth2AccessDenied).
 			Redirect(ctx, w, r, http.StatusSeeOther)
 	}
 }

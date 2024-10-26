@@ -28,7 +28,7 @@ func InitializeRepositories(ctx context.Context, config *config.Config, infras *
 
 	r.UserRepository = grpc.NewUserRepository(infras.UsergRPCConn)
 	r.RefreshTokenRepository = gorm.NewRefreshTokenRepository(infras.GormPostgres)
-	r.OAuth2ClientRepository = gorm.NewOAuth2ClientRepository(infras.GormPostgres)
+	r.OAuth2ClientRepository = grpc.NewOAuth2ClientRepository(infras.OAuth2ClientgRPCConn)
 	r.SessionRepository = gorm.NewSessionRepository(
 		session.NewCookieStore[model.SessionModel](
 			[]byte(config.Secret.Session.AuthenticationKey),

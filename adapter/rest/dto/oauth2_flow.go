@@ -11,6 +11,7 @@ import (
 	"github.com/todennus/oauth2-service/usecase/dto"
 	"github.com/todennus/shared/errordef"
 	"github.com/todennus/shared/response"
+	"github.com/todennus/shared/scopedef"
 	"github.com/todennus/x/xerror"
 	"github.com/todennus/x/xhttp"
 	"github.com/xybor-x/snowflake"
@@ -49,7 +50,7 @@ func (req OAuth2TokenRequest) To() *dto.OAuth2TokenRequest {
 
 		Username: req.Username,
 		Password: req.Password,
-		Scope:    req.Scope,
+		Scope:    scopedef.Engine.ParseScopes(req.Scope),
 
 		RefreshToken: req.RefreshToken,
 	}
@@ -73,7 +74,7 @@ func NewOAuth2TokenResponse(resp *dto.OAuth2TokenResponse) *OAuth2TokenResponse 
 		TokenType:    resp.TokenType,
 		ExpiresIn:    resp.ExpiresIn,
 		RefreshToken: resp.RefreshToken,
-		Scope:        resp.Scope,
+		Scope:        resp.Scope.String(),
 	}
 }
 
@@ -94,7 +95,7 @@ func (req OAuth2AuthorizeRequest) To() *dto.OAuth2AuthorizeRequest {
 		ResponseType:        req.ResponseType,
 		ClientID:            snowflake.ID(req.ClientID),
 		RedirectURI:         req.RedirectURI,
-		Scope:               req.Scope,
+		Scope:               scopedef.Engine.ParseScopes(req.Scope),
 		State:               req.State,
 		CodeChallenge:       req.CodeChallenge,
 		CodeChallengeMethod: req.CodeChallengeMethod,
@@ -227,29 +228,7 @@ func (req OAuth2SessionUpdateRequest) To() *dto.OAuth2SessionUpdateRequest {
 }
 
 func NewOAuth2SessionUpdateRedirectURI(resp *dto.OAuth2SessionUpdateResponse) string {
-	if resp == nil {
-		return ""
-	}
-
-	q := url.Values{}
-	q.Set("response_type", resp.ResponseType)
-	q.Set("client_id", resp.ClientID.String())
-	q.Set("redirect_uri", resp.RedirectURI)
-	q.Set("scope", resp.Scope)
-
-	if resp.State != "" {
-		q.Set("state", resp.State)
-	}
-
-	if resp.CodeChallenge != "" {
-		q.Set("code_challenge", resp.CodeChallenge)
-	}
-
-	if resp.CodeChallengeMethod != "" {
-		q.Set("code_challenge_method", resp.CodeChallengeMethod)
-	}
-
-	return fmt.Sprintf("/oauth2/authorize?%s", q.Encode())
+	return restoreOAuth2AuthorizeURL((*dto.OAuth2AuthorizeRequest)(resp))
 }
 
 type OAuth2GetConsentPageRequest struct {
@@ -310,26 +289,30 @@ func (req OAuth2UpdateConsentRequest) To() *dto.OAuth2UpdateConsentRequest {
 }
 
 func NewOAuth2ConsentUpdateRedirectURI(resp *dto.OAUth2UpdateConsentResponse) string {
-	if resp == nil {
+	return restoreOAuth2AuthorizeURL((*dto.OAuth2AuthorizeRequest)(resp))
+}
+
+func restoreOAuth2AuthorizeURL(request *dto.OAuth2AuthorizeRequest) string {
+	if request == nil {
 		return ""
 	}
 
 	q := url.Values{}
-	q.Set("response_type", resp.ResponseType)
-	q.Set("client_id", resp.ClientID.String())
-	q.Set("redirect_uri", resp.RedirectURI)
-	q.Set("scope", resp.Scope)
+	q.Set("response_type", request.ResponseType)
+	q.Set("client_id", request.ClientID.String())
+	q.Set("redirect_uri", request.RedirectURI)
+	q.Set("scope", request.Scope.String())
 
-	if resp.State != "" {
-		q.Set("state", resp.State)
+	if request.State != "" {
+		q.Set("state", request.State)
 	}
 
-	if resp.CodeChallenge != "" {
-		q.Set("code_challenge", resp.CodeChallenge)
+	if request.CodeChallenge != "" {
+		q.Set("code_challenge", request.CodeChallenge)
 	}
 
-	if resp.CodeChallengeMethod != "" {
-		q.Set("code_challenge_method", resp.CodeChallengeMethod)
+	if request.CodeChallengeMethod != "" {
+		q.Set("code_challenge_method", request.CodeChallengeMethod)
 	}
 
 	return fmt.Sprintf("/oauth2/authorize?%s", q.Encode())
