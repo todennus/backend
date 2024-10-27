@@ -34,11 +34,11 @@ func InitializeDomains(ctx context.Context, config *config.Config) (*Domains, er
 	)
 
 	domains.OAuth2TokenDomain = domain.NewOAuth2TokenDomain(
-		config.NewSnowflakeNode(),
-		config.Variable.Authentication.TokenIssuer,
-		time.Duration(config.Variable.Authentication.AccessTokenExpiration)*time.Second,
-		time.Duration(config.Variable.Authentication.RefreshTokenExpiration)*time.Second,
-		time.Duration(config.Variable.Authentication.IDTokenExpiration)*time.Second,
+		config.SnowflakeNode,
+		config.Variable.OAuth2.TokenIssuer,
+		time.Duration(config.Variable.OAuth2.AccessTokenExpiration)*time.Second,
+		time.Duration(config.Variable.OAuth2.RefreshTokenExpiration)*time.Second,
+		time.Duration(config.Variable.OAuth2.IDTokenExpiration)*time.Second,
 	)
 
 	return domains, nil

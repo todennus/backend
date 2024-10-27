@@ -101,8 +101,8 @@ github.com/todennus/migration v0.1.1 h1:tuNcQ2U4R2IVJa0G70I1r3sKFRpx+f8d/P29D0Mw
 github.com/todennus/migration v0.1.1/go.mod h1:YbxYfDsbldvvmqtE4xEm/TXsRBSSsW3w9CKpshKoesQ=
 github.com/todennus/proto v0.2.0 h1:sBJtj8dsTwx+ssg37yRLSNXIcDzusRNUbjWtQ1kZ6tA=
 github.com/todennus/proto v0.2.0/go.mod h1:36s6CMuk3/44HB/Q/mZ9eTXXvyEqpw/HrRCbUvyq2GU=
-github.com/todennus/shared v0.4.1 h1:+I3YJOeW47zrqCDKzHohulSJDn6gxjxzJAHIIMZjZL4=
-github.com/todennus/shared v0.4.1/go.mod h1:uOpuElF1l7h8Unb85gqJeJJwtiU/V2VDM3eSSQWBt/I=
+github.com/todennus/shared v0.4.2 h1:HnPUeNCpub0td9K7eaOZg4tO6TbK+8/fWD29rvVX080=
+github.com/todennus/shared v0.4.2/go.mod h1:uOpuElF1l7h8Unb85gqJeJJwtiU/V2VDM3eSSQWBt/I=
 github.com/todennus/x v0.1.3 h1:tpcmlEHBIiTLu4CDRRRXShMDk4jx/G/CKAX0zxWPJoA=
 github.com/todennus/x v0.1.3/go.mod h1:4adItk4lQC/us337I8PEOf5zAd1WPknwlUQkfZfcWns=
 github.com/xybor-x/snowflake v1.0.0 h1:cpBLbuBeUrHeBN7behThldVqJ0ZTtQD/M87Vk67Xpl4=
