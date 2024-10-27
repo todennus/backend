@@ -45,7 +45,7 @@ func (usecase *OAuth2AuthenticationUsecase) AuthenticationCallback(
 	req *dto.OAuth2AuthenticationCallbackRequest,
 ) (*dto.OAuth2AuthenticationCallbackResponse, error) {
 	if req.Secret != usecase.idpSecret {
-		return nil, xerror.Enrich(errordef.ErrUnauthenticated, "incorrect idp secret")
+		return nil, xerror.Enrich(errordef.ErrCredentialsInvalid, "incorrect idp secret")
 	}
 
 	store, err := usecase.oauth2CodeRepo.LoadAuthorizationStore(ctx, req.AuthorizationID)

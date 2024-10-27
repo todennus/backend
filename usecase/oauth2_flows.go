@@ -462,7 +462,7 @@ func (usecase *OAuth2FlowUsecase) validateClient(
 				Hide(err, "failed-to-validate-client")
 		}
 
-		if errors.Is(err, errordef.ErrUnauthenticated) {
+		if errors.Is(err, errordef.ErrCredentialsInvalid) {
 			return xerror.Enrich(errordef.ErrOAuth2ClientInvalid, "client credentials is incorrect").
 				Hide(err, "failed-to-validate-client")
 		}

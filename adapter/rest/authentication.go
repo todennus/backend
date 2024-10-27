@@ -35,8 +35,8 @@ func (a *AuthenticationAdapter) Router(r chi.Router) {
 // @Param body body dto.OAuth2AuthenticationCallbackRequest true "Authentication result"
 // @Success 200 {object} dto.OAuth2AuthenticationCallbackResponse "Successfully accept the result"
 // @Failure 400 {object} response.SwaggerBadRequestErrorResponse "Bad request"
-// @Failure 401 {object} response.SwaggerUnauthorizedErrorResponse "Unauthorized"
-// @Failure 401 {object} response.SwaggerNotFoundErrorResponse "Not found"
+// @Failure 403 {object} response.SwaggerForbiddenErrorResponse "Forbidden"
+// @Failure 404 {object} response.SwaggerNotFoundErrorResponse "Not found"
 // @Router /auth/callback [post]
 func (a *AuthenticationAdapter) AuthenticationCallback() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -58,7 +58,7 @@ func (a *AuthenticationAdapter) AuthenticationCallback() http.HandlerFunc {
 		response.NewRESTResponseHandler(ctx, dto.NewOAuth2AuthenticationCallbackResponse(resp), err).
 			Map(http.StatusBadRequest, errordef.ErrRequestInvalid).
 			Map(http.StatusNotFound, errordef.ErrNotFound).
-			Map(http.StatusUnauthorized, errordef.ErrUnauthenticated).
+			Map(http.StatusForbidden, errordef.ErrCredentialsInvalid).
 			WriteHTTPResponse(ctx, w)
 	}
 }
