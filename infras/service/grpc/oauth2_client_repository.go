@@ -8,6 +8,8 @@ import (
 	"github.com/todennus/proto/gen/service/dto"
 	"github.com/todennus/shared/enumdef"
 	"github.com/todennus/shared/errordef"
+	"github.com/todennus/x/scope"
+	"github.com/xybor-x/snowflake"
 	"google.golang.org/grpc"
 )
 
@@ -21,8 +23,8 @@ func NewOAuth2ClientRepository(conn *grpc.ClientConn) *OAuth2ClientRepository {
 	}
 }
 
-func (repo *OAuth2ClientRepository) GetByID(ctx context.Context, clientID int64) (*domain.OAuth2Client, error) {
-	resp, err := repo.client.GetByID(ctx, &dto.OAuth2ClientGetByIDRequest{ClientId: clientID})
+func (repo *OAuth2ClientRepository) GetByID(ctx context.Context, clientID snowflake.ID) (*domain.OAuth2Client, error) {
+	resp, err := repo.client.GetByID(ctx, &dto.OAuth2ClientGetByIDRequest{ClientId: clientID.Int64()})
 	if err != nil {
 		return nil, errordef.ConvertGRPCError(err)
 	}
@@ -32,16 +34,16 @@ func (repo *OAuth2ClientRepository) GetByID(ctx context.Context, clientID int64)
 
 func (repo *OAuth2ClientRepository) Validate(
 	ctx context.Context,
-	clientID int64,
+	clientID snowflake.ID,
 	clientSecret string,
 	requirement enumdef.ConfidentialRequirementType,
-	requestedScope string,
+	requestedScope scope.Scopes,
 ) error {
 	_, err := repo.client.Validate(ctx, &dto.OAuth2ClientValidateRequest{
-		ClientId:       clientID,
+		ClientId:       clientID.Int64(),
 		ClientSecret:   clientSecret,
 		Requirement:    enumdef.ConfidentialRequirementTypeToGRPC(requirement),
-		RequestedScope: requestedScope,
+		RequestedScope: requestedScope.String(),
 	})
 
 	if err != nil {

@@ -22,7 +22,7 @@ func NewOAuth2ConsentResultModel(result *domain.OAuth2ConsentResult) *OAuth2Cons
 	}
 }
 
-func (model *OAuth2ConsentResultModel) To(userID, clientID int64) *domain.OAuth2ConsentResult {
+func (model *OAuth2ConsentResultModel) To(userID, clientID snowflake.ID) *domain.OAuth2ConsentResult {
 	return &domain.OAuth2ConsentResult{
 		UserID:    snowflake.ID(userID),
 		ClientID:  snowflake.ID(clientID),

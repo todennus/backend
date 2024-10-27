@@ -5,27 +5,29 @@ import (
 
 	"github.com/todennus/oauth2-service/domain"
 	"github.com/todennus/shared/enumdef"
+	"github.com/todennus/x/scope"
+	"github.com/xybor-x/snowflake"
 )
 
 type UserRepository interface {
-	GetByID(ctx context.Context, userID int64) (*domain.User, error)
+	GetByID(ctx context.Context, userID snowflake.ID) (*domain.User, error)
 	Validate(ctx context.Context, username string, password string) (*domain.User, error)
 }
 
 type RefreshTokenRepository interface {
-	Create(ctx context.Context, refreshTokenID, accessTokenID int64, seq int) error
-	UpdateByRefreshTokenID(ctx context.Context, refreshTokenID, accessTokenId int64, expectedCurSeq int) error
-	DeleteByRefreshTokenID(ctx context.Context, refreshTokenID int64) error
+	Create(ctx context.Context, refreshTokenID, accessTokenID snowflake.ID, seq int) error
+	UpdateByRefreshTokenID(ctx context.Context, refreshTokenID, accessTokenId snowflake.ID, expectedCurSeq int) error
+	DeleteByRefreshTokenID(ctx context.Context, refreshTokenID snowflake.ID) error
 }
 
 type OAuth2ClientRepository interface {
-	GetByID(ctx context.Context, clientID int64) (*domain.OAuth2Client, error)
+	GetByID(ctx context.Context, clientID snowflake.ID) (*domain.OAuth2Client, error)
 	Validate(
 		ctx context.Context,
-		clientID int64,
+		clientID snowflake.ID,
 		clientSecret string,
 		require enumdef.ConfidentialRequirementType,
-		requestedScope string,
+		requestedScope scope.Scopes,
 	) error
 }
 
@@ -50,9 +52,9 @@ type OAuth2AuthorizationCodeRepository interface {
 
 type OAuth2ConsentRepository interface {
 	SaveResult(ctx context.Context, result *domain.OAuth2ConsentResult) error
-	LoadResult(ctx context.Context, userID, clientID int64) (*domain.OAuth2ConsentResult, error)
-	DeleteResult(ctx context.Context, userID, clientID int64) error
+	LoadResult(ctx context.Context, userID, clientID snowflake.ID) (*domain.OAuth2ConsentResult, error)
+	DeleteResult(ctx context.Context, userID, clientID snowflake.ID) error
 
 	Upsert(ctx context.Context, consent *domain.OAuth2Consent) error
-	Get(ctx context.Context, userID, clientID int64) (*domain.OAuth2Consent, error)
+	Get(ctx context.Context, userID, clientID snowflake.ID) (*domain.OAuth2Consent, error)
 }

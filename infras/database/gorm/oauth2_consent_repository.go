@@ -6,6 +6,7 @@ import (
 	"github.com/todennus/oauth2-service/domain"
 	"github.com/todennus/oauth2-service/infras/database/model"
 	"github.com/todennus/shared/errordef"
+	"github.com/xybor-x/snowflake"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -28,7 +29,7 @@ func (repo *OAuth2ConsentRepository) Upsert(ctx context.Context, consent *domain
 	)
 }
 
-func (repo *OAuth2ConsentRepository) Get(ctx context.Context, userID, clientID int64) (*domain.OAuth2Consent, error) {
+func (repo *OAuth2ConsentRepository) Get(ctx context.Context, userID, clientID snowflake.ID) (*domain.OAuth2Consent, error) {
 	model := model.OAuth2ConsentModel{}
 	if err := repo.db.WithContext(ctx).Take(&model, "user_id=? AND client_id=?", userID, clientID).Error; err != nil {
 		return nil, errordef.ConvertGormError(err)
