@@ -22,25 +22,15 @@ func OAuth2StandardClaimsFromDomain(claims *domain.OAuth2TokenMedata) *tokendef.
 	}
 }
 
-func OAuth2StandardClaimsToDomain(claims *tokendef.OAuth2StandardClaims) (*domain.OAuth2TokenMedata, error) {
-	id, err := snowflake.ParseString(claims.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	sub, err := snowflake.ParseString(claims.Subject)
-	if err != nil {
-		return nil, err
-	}
-
+func OAuth2StandardClaimsToDomain(claims *tokendef.OAuth2StandardClaims) *domain.OAuth2TokenMedata {
 	return &domain.OAuth2TokenMedata{
-		ID:        id,
+		ID:        claims.SnowflakeID(),
 		Issuer:    claims.Issuer,
 		Audience:  claims.Audience,
-		Subject:   sub,
+		Subject:   claims.SnowflakeSub(),
 		ExpiresAt: claims.ExpiresAt,
 		NotBefore: claims.NotBefore,
-	}, nil
+	}
 }
 
 func OAuth2AccessTokenFromDomain(token *domain.OAuth2AccessToken) *tokendef.OAuth2AccessToken {
@@ -58,17 +48,14 @@ func OAuth2RefreshTokenFromDomain(token *domain.OAuth2RefreshToken) *tokendef.OA
 	}
 }
 
-func OAuth2RefreshTokenToDomain(token *tokendef.OAuth2RefreshToken) (*domain.OAuth2RefreshToken, error) {
-	metadata, err := OAuth2StandardClaimsToDomain(token.OAuth2StandardClaims)
-	if err != nil {
-		return nil, err
-	}
+func OAuth2RefreshTokenToDomain(token *tokendef.OAuth2RefreshToken) *domain.OAuth2RefreshToken {
+	metadata := OAuth2StandardClaimsToDomain(token.OAuth2StandardClaims)
 
 	return &domain.OAuth2RefreshToken{
 		Metadata:       metadata,
 		SequenceNumber: token.SequenceNumber,
 		Scope:          scopedef.Engine.ParseScopes(token.Scope),
-	}, nil
+	}
 }
 
 type OAuth2TokenRequest struct {

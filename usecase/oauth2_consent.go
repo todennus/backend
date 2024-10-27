@@ -55,7 +55,7 @@ func (usecase *OAuth2ConsentUsecase) GetConsent(
 		return nil, errordef.ErrServer.Hide(err, "failed-to-load-authorization-store", "aid", req.AuthorizationID)
 	}
 
-	client, err := usecase.oauth2ClientRepo.GetByID(ctx, store.ClientID.Int64())
+	client, err := usecase.oauth2ClientRepo.GetByID(ctx, store.ClientID)
 	if err != nil {
 		return nil, errordef.ErrServer.Hide(err, "failed-to-load-client", "cid", store.ClientID)
 	}

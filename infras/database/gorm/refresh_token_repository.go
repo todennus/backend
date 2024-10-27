@@ -5,6 +5,7 @@ import (
 
 	"github.com/todennus/oauth2-service/infras/database/model"
 	"github.com/todennus/shared/errordef"
+	"github.com/xybor-x/snowflake"
 	"gorm.io/gorm"
 )
 
@@ -18,20 +19,19 @@ func NewRefreshTokenRepository(db *gorm.DB) *RefreshTokenRepository {
 
 func (repo *RefreshTokenRepository) Create(
 	ctx context.Context,
-	refreshTokenId,
-	accessTokenID int64,
+	refreshTokenId, accessTokenID snowflake.ID,
 	seq int,
 ) error {
 	return errordef.ConvertGormError(repo.db.WithContext(ctx).Create(&model.RefreshTokenModel{
-		RefreshTokenID: refreshTokenId,
-		AccessTokenID:  accessTokenID,
+		RefreshTokenID: refreshTokenId.Int64(),
+		AccessTokenID:  accessTokenID.Int64(),
 		Seq:            seq,
 	}).Error)
 }
 
 func (repo *RefreshTokenRepository) UpdateByRefreshTokenID(
 	ctx context.Context,
-	refreshTokenID, accessTokenID int64,
+	refreshTokenID, accessTokenID snowflake.ID,
 	expectedCurSeq int,
 ) error {
 	result := repo.db.WithContext(ctx).Model(&model.RefreshTokenModel{}).
@@ -49,7 +49,7 @@ func (repo *RefreshTokenRepository) UpdateByRefreshTokenID(
 }
 
 func (repo *RefreshTokenRepository) DeleteByRefreshTokenID(
-	ctx context.Context, refreshTokenID int64,
+	ctx context.Context, refreshTokenID snowflake.ID,
 ) error {
 	return errordef.ConvertGormError(repo.db.WithContext(ctx).Delete(&model.RefreshTokenModel{}, refreshTokenID).Error)
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/todennus/oauth2-service/domain"
 	"github.com/todennus/oauth2-service/infras/database/model"
 	"github.com/todennus/shared/errordef"
+	"github.com/xybor-x/snowflake"
 )
 
 func oauth2ConsentResultKey(userID, clientID int64) string {
@@ -41,9 +42,9 @@ func (repo *OAuth2ConsentResultRepository) SaveResult(
 
 func (repo *OAuth2ConsentResultRepository) LoadResult(
 	ctx context.Context,
-	userID, clientID int64,
+	userID, clientID snowflake.ID,
 ) (*domain.OAuth2ConsentResult, error) {
-	result, err := repo.client.Get(ctx, oauth2ConsentResultKey(userID, clientID)).Result()
+	result, err := repo.client.Get(ctx, oauth2ConsentResultKey(userID.Int64(), clientID.Int64())).Result()
 	if err != nil {
 		return nil, errordef.ConvertRedisError(err)
 	}
@@ -58,7 +59,8 @@ func (repo *OAuth2ConsentResultRepository) LoadResult(
 
 func (repo *OAuth2ConsentResultRepository) DeleteResult(
 	ctx context.Context,
-	userID, clientID int64,
+	userID, clientID snowflake.ID,
 ) error {
-	return errordef.ConvertRedisError(repo.client.Del(ctx, oauth2ConsentResultKey(userID, clientID)).Err())
+	return errordef.ConvertRedisError(
+		repo.client.Del(ctx, oauth2ConsentResultKey(userID.Int64(), clientID.Int64())).Err())
 }

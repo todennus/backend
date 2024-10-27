@@ -68,7 +68,7 @@ func (usecase *OAuth2AuthenticationUsecase) AuthenticationCallback(
 
 	var authResult *domain.OAuth2AuthenticationResult
 	if req.Success {
-		if _, err := usecase.userRepo.GetByID(ctx, req.UserID.Int64()); err != nil {
+		if _, err := usecase.userRepo.GetByID(ctx, req.UserID); err != nil {
 			if errors.Is(err, errordef.ErrNotFound) {
 				return nil, xerror.Enrich(errordef.ErrNotFound, "not found user with id %d", req.UserID)
 			}

@@ -7,6 +7,7 @@ import (
 	"github.com/todennus/proto/gen/service"
 	"github.com/todennus/proto/gen/service/dto"
 	"github.com/todennus/shared/errordef"
+	"github.com/xybor-x/snowflake"
 	"google.golang.org/grpc"
 )
 
@@ -20,8 +21,8 @@ func NewUserRepository(conn *grpc.ClientConn) *UserRepository {
 	}
 }
 
-func (repo *UserRepository) GetByID(ctx context.Context, userID int64) (*domain.User, error) {
-	resp, err := repo.client.GetByID(ctx, &dto.UserGetByIDRequest{Id: userID})
+func (repo *UserRepository) GetByID(ctx context.Context, userID snowflake.ID) (*domain.User, error) {
+	resp, err := repo.client.GetByID(ctx, &dto.UserGetByIDRequest{Id: userID.Int64()})
 	if err != nil {
 		return nil, errordef.ConvertGRPCError(err)
 	}

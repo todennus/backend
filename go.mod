@@ -8,8 +8,8 @@ require (
 	github.com/spf13/cobra v1.8.1
 	github.com/todennus/migration v0.1.1
 	github.com/todennus/proto v0.2.0
-	github.com/todennus/shared v0.4.2
-	github.com/todennus/x v0.1.3
+	github.com/todennus/shared v0.5.0
+	github.com/todennus/x v0.2.0
 	github.com/xybor-x/snowflake v1.0.0
 	google.golang.org/grpc v1.67.1
 	gorm.io/gorm v1.25.12
