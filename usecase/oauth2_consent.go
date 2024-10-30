@@ -8,8 +8,7 @@ import (
 	"github.com/todennus/oauth2-service/usecase/abstraction"
 	"github.com/todennus/oauth2-service/usecase/dto"
 	"github.com/todennus/shared/errordef"
-	"github.com/todennus/shared/scopedef"
-	"github.com/todennus/x/xcontext"
+	"github.com/todennus/shared/xcontext"
 	"github.com/todennus/x/xerror"
 )
 
@@ -86,12 +85,10 @@ func (usecase *OAuth2ConsentUsecase) UpdateConsent(
 	}
 
 	var result *domain.OAuth2ConsentResult
-
 	if req.Accept {
-		userScope := scopedef.Engine.ParseScopes(req.UserScope)
-		result = usecase.oauth2ConsentDomain.NewConsentAcceptedResult(userID, store.ClientID, userScope)
+		result = usecase.oauth2ConsentDomain.NewConsentAcceptedResult(userID, store.ClientID, store.Scope)
 
-		consent := usecase.oauth2ConsentDomain.NewConsent(userID, store.ClientID, userScope)
+		consent := usecase.oauth2ConsentDomain.NewConsent(userID, store.ClientID, store.Scope)
 		if err := usecase.oauth2ConsentRepo.Upsert(ctx, consent); err != nil {
 			return nil, errordef.ErrServer.Hide(err, "failed-to-new-or-update-consent")
 		}

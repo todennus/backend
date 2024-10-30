@@ -19,7 +19,8 @@ func NewUser(user *resource.User) *domain.User {
 
 func NewOAuth2Client(client *resource.OAuth2Client) *domain.OAuth2Client {
 	return &domain.OAuth2Client{
-		ID:   snowflake.ID(client.Id),
-		Name: client.Name,
+		ID:      snowflake.ID(client.Id),
+		Name:    client.Name,
+		IsAdmin: client.IsAdmin,
 	}
 }

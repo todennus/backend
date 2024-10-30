@@ -1,12 +1,12 @@
-package gorm
+package composite
 
 import (
 	"context"
 
 	"github.com/todennus/oauth2-service/domain"
 	"github.com/todennus/oauth2-service/infras/database/model"
+	"github.com/todennus/shared/xcontext"
 	"github.com/todennus/x/session"
-	"github.com/todennus/x/xcontext"
 )
 
 type SessionRepository struct {

@@ -27,7 +27,7 @@ func (model *OAuth2ConsentResultModel) To(userID, clientID snowflake.ID) *domain
 		UserID:    snowflake.ID(userID),
 		ClientID:  snowflake.ID(clientID),
 		Accepted:  model.Accepted,
-		Scope:     scopedef.Engine.ParseScopes(model.Scope),
+		Scope:     scopedef.Engine.ParseAnyScopes(model.Scope),
 		ExpiresAt: time.UnixMilli(model.ExpiresAt),
 	}
 }
@@ -60,7 +60,7 @@ func (model OAuth2ConsentModel) To() *domain.OAuth2Consent {
 	return &domain.OAuth2Consent{
 		UserID:    snowflake.ID(model.UserID),
 		ClientID:  snowflake.ID(model.ClientID),
-		Scope:     scopedef.Engine.ParseScopes(model.Scope),
+		Scope:     scopedef.Engine.ParseAnyScopes(model.Scope),
 		CreatedAt: model.CreatedAt,
 		UpdatedAt: model.UpdatedAt,
 		ExpiresAt: model.ExpiresAt,

@@ -12,11 +12,20 @@ type OAuth2FlowUsecase interface {
 }
 
 type OAuth2AuthenticationUsecase interface {
-	AuthenticationCallback(ctx context.Context, req *dto.OAuth2AuthenticationCallbackRequest) (*dto.OAuth2AuthenticationCallbackResponse, error)
-	SessionUpdate(ctx context.Context, req *dto.OAuth2SessionUpdateRequest) (*dto.OAuth2SessionUpdateResponse, error)
+	AuthenticationCallback(
+		ctx context.Context,
+		req *dto.OAuth2AuthenticationCallbackRequest,
+	) (*dto.OAuth2AuthenticationCallbackResponse, error)
+	SessionUpdate(
+		ctx context.Context,
+		req *dto.OAuth2SessionUpdateRequest,
+	) (*dto.OAuth2SessionUpdateResponse, error)
 }
 
 type OAuth2ConsentUsecase interface {
 	GetConsent(ctx context.Context, req *dto.OAuth2GetConsentRequest) (*dto.OAuth2GetConsentResponse, error)
-	UpdateConsent(ctx context.Context, req *dto.OAuth2UpdateConsentRequest) (*dto.OAUth2UpdateConsentResponse, error)
+	UpdateConsent(
+		ctx context.Context,
+		req *dto.OAuth2UpdateConsentRequest,
+	) (*dto.OAUth2UpdateConsentResponse, error)
 }

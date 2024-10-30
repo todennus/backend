@@ -8,7 +8,7 @@ import (
 	"github.com/todennus/oauth2-service/usecase/abstraction"
 	"github.com/todennus/oauth2-service/usecase/dto"
 	"github.com/todennus/shared/errordef"
-	"github.com/todennus/x/xcontext"
+	"github.com/todennus/shared/xcontext"
 	"github.com/todennus/x/xerror"
 )
 

@@ -50,7 +50,7 @@ func (req OAuth2TokenRequest) To() *dto.OAuth2TokenRequest {
 
 		Username: req.Username,
 		Password: req.Password,
-		Scope:    scopedef.Engine.ParseScopes(req.Scope),
+		Scope:    scopedef.Engine.ParseAnyScopes(req.Scope),
 
 		RefreshToken: req.RefreshToken,
 	}
@@ -95,7 +95,7 @@ func (req OAuth2AuthorizeRequest) To() *dto.OAuth2AuthorizeRequest {
 		ResponseType:        req.ResponseType,
 		ClientID:            snowflake.ID(req.ClientID),
 		RedirectURI:         req.RedirectURI,
-		Scope:               scopedef.Engine.ParseScopes(req.Scope),
+		Scope:               scopedef.Engine.ParseAnyScopes(req.Scope),
 		State:               req.State,
 		CodeChallenge:       req.CodeChallenge,
 		CodeChallengeMethod: req.CodeChallengeMethod,
@@ -242,8 +242,9 @@ func (req OAuth2GetConsentPageRequest) To() *dto.OAuth2GetConsentRequest {
 }
 
 type ConsentPageScope struct {
-	Optional bool
-	Key      string
+	Description string
+	IsAdmin     bool
+	Key         string
 }
 
 type OAuth2GetConsentPageResponse struct {
@@ -256,9 +257,15 @@ type OAuth2GetConsentPageResponse struct {
 func NewOAuth2GetConsentPageResponse(resp *dto.OAuth2GetConsentResponse) *OAuth2GetConsentPageResponse {
 	scopes := []ConsentPageScope{}
 	for i := range resp.Scopes {
+		scope, ok := resp.Scopes[i].(scopedef.DescriptiveScope)
+		if !ok {
+			continue
+		}
+
 		scopes = append(scopes, ConsentPageScope{
-			Optional: resp.Scopes[i].IsOptional(),
-			Key:      resp.Scopes[i].String(),
+			Description: scope.Description(),
+			IsAdmin:     scopedef.IsTitle[scopedef.Admin](scope),
+			Key:         scope.Scope(),
 		})
 	}
 
@@ -272,7 +279,6 @@ func NewOAuth2GetConsentPageResponse(resp *dto.OAuth2GetConsentResponse) *OAuth2
 type OAuth2UpdateConsentRequest struct {
 	AuthorizationID string `query:"authorization_id"`
 	Consent         string `form:"consent"`
-	UserScope       string `form:"scope"`
 }
 
 func (req OAuth2UpdateConsentRequest) To() *dto.OAuth2UpdateConsentRequest {
@@ -284,7 +290,6 @@ func (req OAuth2UpdateConsentRequest) To() *dto.OAuth2UpdateConsentRequest {
 	return &dto.OAuth2UpdateConsentRequest{
 		Accept:          accept,
 		AuthorizationID: req.AuthorizationID,
-		UserScope:       req.UserScope,
 	}
 }
 

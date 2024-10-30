@@ -95,26 +95,18 @@
             <p><strong>Client ID:</strong> {{.ClientID}}</p>
         </div>
 
-        <p>This client can access your account and interact with our API on your behalf. Select the permissions you're
-            comfortable granting:</p>
+        <p>This client can access your account and interact with our API on your behalf </p>
+
+        <div class="scopes">
+            {{range .Scopes}}
+            <label>
+                <input type="hidden" name="scope" value="{{.Key}}">
+                {{ if .IsAdmin }}**{{end}} {{.Description}} {{ if .IsAdmin }}**{{end}}
+            </label>
+            {{end}}
+        </div>
 
         <form id="consent-form" action="/oauth2/consent" method="POST">
-            <div class="scopes">
-                {{range .Scopes}}
-                {{if not .Optional}}
-                <label>
-                    <input type="hidden" name="scope" value="{{.Key}}">
-                    {{.Key}} (*required)
-                </label>
-                {{else}}
-                <label>
-                    <input type="checkbox" name="scope" value="{{.Key}}" checked>
-                    {{.Key}}
-                </label>
-                {{end}}
-                {{end}}
-            </div>
-
             <button type="submit" class="btn" name="consent" value="accepted">Accept</button>
             <button type="submit" class="btn deny-btn" name="consent" value="declined">Deny</button>
         </form>

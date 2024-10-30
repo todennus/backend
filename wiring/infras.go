@@ -6,12 +6,15 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/todennus/migration/postgres"
 	"github.com/todennus/shared/config"
+	"github.com/todennus/shared/scopedef"
+	"golang.org/x/oauth2/clientcredentials"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"gorm.io/gorm"
 )
 
 type Infras struct {
+	AuthConfig           *clientcredentials.Config
 	GormPostgres         *gorm.DB
 	Redis                *redis.Client
 	UsergRPCConn         *grpc.ClientConn
@@ -43,6 +46,16 @@ func InitializeInfras(ctx context.Context, config *config.Config) (*Infras, erro
 		config.Variable.Service.OAuth2ClientGRPCAddr,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
+
+	infras.AuthConfig = &clientcredentials.Config{
+		ClientID: config.Secret.Service.ClientID,
+		Scopes: []string{
+			scopedef.AdminReadUserProfile.Scope(),
+			scopedef.AdminValidateUser.Scope(),
+			scopedef.AdminReadClientProfile.Scope(),
+			scopedef.AdminValidateClient.Scope(),
+		},
+	}
 
 	return &infras, nil
 }

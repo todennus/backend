@@ -5,7 +5,6 @@ import (
 
 	"github.com/todennus/oauth2-service/domain"
 	"github.com/todennus/shared/enumdef"
-	"github.com/todennus/x/scope"
 	"github.com/xybor-x/snowflake"
 )
 
@@ -14,10 +13,11 @@ type UserRepository interface {
 	Validate(ctx context.Context, username string, password string) (*domain.User, error)
 }
 
-type RefreshTokenRepository interface {
-	Create(ctx context.Context, refreshTokenID, accessTokenID snowflake.ID, seq int) error
-	UpdateByRefreshTokenID(ctx context.Context, refreshTokenID, accessTokenId snowflake.ID, expectedCurSeq int) error
-	DeleteByRefreshTokenID(ctx context.Context, refreshTokenID snowflake.ID) error
+type OAuth2RefreshTokenRepository interface {
+	Get(ctx context.Context, id snowflake.ID) (*domain.OAuth2RefreshTokenStorage, error)
+	Create(ctx context.Context, token *domain.OAuth2RefreshTokenStorage) error
+	Update(ctx context.Context, token *domain.OAuth2RefreshTokenStorage) error
+	Delete(ctx context.Context, refreshTokenID snowflake.ID) error
 }
 
 type OAuth2ClientRepository interface {
@@ -26,9 +26,8 @@ type OAuth2ClientRepository interface {
 		ctx context.Context,
 		clientID snowflake.ID,
 		clientSecret string,
-		require enumdef.ConfidentialRequirementType,
-		requestedScope scope.Scopes,
-	) error
+		require enumdef.OAuth2ClientConfidentialRequirement,
+	) (*domain.OAuth2Client, error)
 }
 
 type SessionRepository interface {

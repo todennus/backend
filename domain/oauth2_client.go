@@ -5,6 +5,7 @@ import (
 )
 
 type OAuth2Client struct {
-	ID   snowflake.ID
-	Name string
+	ID      snowflake.ID
+	Name    string
+	IsAdmin bool
 }
