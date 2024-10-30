@@ -3,7 +3,6 @@ package usecase
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/todennus/oauth2-service/domain"
@@ -450,8 +449,6 @@ func (usecase *OAuth2FlowUsecase) validateConsentResult(
 		}
 
 		if result.Accepted {
-			fmt.Println(requestedScope.String(), "CCC", result.Scope.String())
-
 			if !requestedScope.Contains(result.Scope...) {
 				return nil, nil, xerror.Enrich(errordef.ErrOAuth2ScopeInvalid,
 					"user choose more scopes than the request from client")
