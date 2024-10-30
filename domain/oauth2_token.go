@@ -3,6 +3,8 @@ package domain
 import (
 	"time"
 
+	"github.com/todennus/shared/enumdef"
+	"github.com/todennus/x/enum"
 	"github.com/todennus/x/scope"
 	"github.com/xybor-x/snowflake"
 )
@@ -19,17 +21,26 @@ type OAuth2TokenMedata struct {
 type OAuth2AccessToken struct {
 	Metadata *OAuth2TokenMedata
 	Scope    scope.Scopes
+	Role     enum.Enum[enumdef.UserRole]
 }
 
 type OAuth2RefreshToken struct {
 	Metadata       *OAuth2TokenMedata
 	SequenceNumber int
-	Scope          scope.Scopes
 }
 
 type OAuth2IDToken struct {
 	Metadata *OAuth2TokenMedata
 	User     *User
+}
+
+type OAuth2RefreshTokenStorage struct {
+	ID             snowflake.ID
+	AccessTokenID  snowflake.ID // Used for search and analystics
+	UserID         snowflake.ID // Used for search and analystics
+	Scope          scope.Scopes
+	SequenceNumber int
+	ExpiresAt      time.Time
 }
 
 type OAuth2TokenDomain struct {
@@ -58,26 +69,47 @@ func NewOAuth2TokenDomain(
 	}
 }
 
-func (domain *OAuth2TokenDomain) NewAccessToken(aud string, scope scope.Scopes, user *User) *OAuth2AccessToken {
+func (domain *OAuth2TokenDomain) NewUserAccessToken(aud string, scope scope.Scopes, user *User) *OAuth2AccessToken {
 	return &OAuth2AccessToken{
 		Metadata: domain.createMedata(aud, user.ID, domain.AccessTokenExpiration),
+		Scope:    scope,
+		Role:     user.Role,
+	}
+}
+
+func (domain *OAuth2TokenDomain) NewClientAccessToken(aud string, scope scope.Scopes, client *OAuth2Client) *OAuth2AccessToken {
+	return &OAuth2AccessToken{
+		Metadata: domain.createMedata(aud, client.ID, domain.AccessTokenExpiration),
 		Scope:    scope,
 	}
 }
 
-func (domain *OAuth2TokenDomain) NewRefreshToken(aud string, scope scope.Scopes, userID snowflake.ID) *OAuth2RefreshToken {
+func (domain *OAuth2TokenDomain) NewRefreshToken(aud string, userID snowflake.ID) *OAuth2RefreshToken {
 	return &OAuth2RefreshToken{
 		Metadata:       domain.createMedata(aud, userID, domain.RefreshTokenExpiration),
 		SequenceNumber: 0,
-		Scope:          scope,
 	}
 }
 
 func (domain *OAuth2TokenDomain) NextRefreshToken(current *OAuth2RefreshToken) *OAuth2RefreshToken {
-	next := domain.NewRefreshToken(current.Metadata.Audience, current.Scope, current.Metadata.Subject)
+	next := domain.NewRefreshToken(current.Metadata.Audience, current.Metadata.Subject)
 	next.Metadata.ID = current.Metadata.ID
 	next.SequenceNumber = current.SequenceNumber + 1
 	return next
+}
+
+func (domain *OAuth2TokenDomain) NewRefreshTokenStore(
+	refreshToken *OAuth2RefreshToken,
+	accessToken *OAuth2AccessToken,
+) *OAuth2RefreshTokenStorage {
+	return &OAuth2RefreshTokenStorage{
+		ID:             refreshToken.Metadata.ID,
+		AccessTokenID:  accessToken.Metadata.ID,
+		UserID:         refreshToken.Metadata.Subject,
+		Scope:          accessToken.Scope,
+		SequenceNumber: refreshToken.SequenceNumber,
+		ExpiresAt:      time.Unix(int64(refreshToken.Metadata.ExpiresAt), 0),
+	}
 }
 
 func (domain *OAuth2TokenDomain) NewIDToken(aud string, user *User) *OAuth2IDToken {

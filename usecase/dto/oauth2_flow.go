@@ -5,7 +5,6 @@ import (
 
 	"github.com/todennus/oauth2-service/domain"
 	"github.com/todennus/oauth2-service/usecase/dto/resource"
-	"github.com/todennus/shared/scopedef"
 	"github.com/todennus/shared/tokendef"
 	"github.com/todennus/x/scope"
 	"github.com/xybor-x/snowflake"
@@ -37,6 +36,7 @@ func OAuth2AccessTokenFromDomain(token *domain.OAuth2AccessToken) *tokendef.OAut
 	return &tokendef.OAuth2AccessToken{
 		OAuth2StandardClaims: OAuth2StandardClaimsFromDomain(token.Metadata),
 		Scope:                token.Scope.String(),
+		Role:                 token.Role.String(),
 	}
 }
 
@@ -44,7 +44,6 @@ func OAuth2RefreshTokenFromDomain(token *domain.OAuth2RefreshToken) *tokendef.OA
 	return &tokendef.OAuth2RefreshToken{
 		OAuth2StandardClaims: OAuth2StandardClaimsFromDomain(token.Metadata),
 		SequenceNumber:       token.SequenceNumber,
-		Scope:                token.Scope.String(),
 	}
 }
 
@@ -54,7 +53,6 @@ func OAuth2RefreshTokenToDomain(token *tokendef.OAuth2RefreshToken) *domain.OAut
 	return &domain.OAuth2RefreshToken{
 		Metadata:       metadata,
 		SequenceNumber: token.SequenceNumber,
-		Scope:          scopedef.Engine.ParseScopes(token.Scope),
 	}
 }
 
@@ -197,7 +195,6 @@ func NewOAuth2GetConsentResponse(client *domain.OAuth2Client, scope scope.Scopes
 
 type OAuth2UpdateConsentRequest struct {
 	AuthorizationID string
-	UserScope       string
 	Accept          bool
 }
 

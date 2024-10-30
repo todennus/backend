@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/todennus/oauth2-service/domain"
@@ -10,10 +11,11 @@ import (
 	"github.com/todennus/oauth2-service/usecase/dto"
 	"github.com/todennus/shared/enumdef"
 	"github.com/todennus/shared/errordef"
+	"github.com/todennus/shared/scopedef"
 	"github.com/todennus/shared/tokendef"
+	"github.com/todennus/shared/xcontext"
 	"github.com/todennus/x/scope"
 	"github.com/todennus/x/token"
-	"github.com/todennus/x/xcontext"
 	"github.com/todennus/x/xerror"
 	"github.com/todennus/x/xhttp"
 	"github.com/xybor-x/snowflake"
@@ -45,12 +47,12 @@ type OAuth2FlowUsecase struct {
 	oauth2TokenDomain   abstraction.OAuth2TokenDomain
 	oauth2SessionDomain abstraction.OAuth2SessionDomain
 
-	userRepo          abstraction.UserRepository
-	refreshTokenRepo  abstraction.RefreshTokenRepository
-	sessionRepo       abstraction.SessionRepository
-	oauth2ClientRepo  abstraction.OAuth2ClientRepository
-	oauth2CodeRepo    abstraction.OAuth2AuthorizationCodeRepository
-	oauth2ConsentRepo abstraction.OAuth2ConsentRepository
+	userRepo               abstraction.UserRepository
+	oauth2RefreshTokenRepo abstraction.OAuth2RefreshTokenRepository
+	sessionRepo            abstraction.SessionRepository
+	oauth2ClientRepo       abstraction.OAuth2ClientRepository
+	oauth2CodeRepo         abstraction.OAuth2AuthorizationCodeRepository
+	oauth2ConsentRepo      abstraction.OAuth2ConsentRepository
 }
 
 func NewOAuth2FlowUsecase(
@@ -61,7 +63,7 @@ func NewOAuth2FlowUsecase(
 	oauth2TokenDomain abstraction.OAuth2TokenDomain,
 	oauth2SessionDomain abstraction.OAuth2SessionDomain,
 	userRepo abstraction.UserRepository,
-	refreshTokenRepo abstraction.RefreshTokenRepository,
+	oauth2RefreshTokenRepo abstraction.OAuth2RefreshTokenRepository,
 	oauth2ClientRepo abstraction.OAuth2ClientRepository,
 	sessionRepo abstraction.SessionRepository,
 	oauth2CodeRepo abstraction.OAuth2AuthorizationCodeRepository,
@@ -77,12 +79,12 @@ func NewOAuth2FlowUsecase(
 		oauth2TokenDomain:   oauth2TokenDomain,
 		oauth2SessionDomain: oauth2SessionDomain,
 
-		userRepo:          userRepo,
-		refreshTokenRepo:  refreshTokenRepo,
-		sessionRepo:       sessionRepo,
-		oauth2ClientRepo:  oauth2ClientRepo,
-		oauth2CodeRepo:    oauth2CodeRepo,
-		oauth2ConsentRepo: oauth2ConsentRepo,
+		userRepo:               userRepo,
+		oauth2RefreshTokenRepo: oauth2RefreshTokenRepo,
+		sessionRepo:            sessionRepo,
+		oauth2ClientRepo:       oauth2ClientRepo,
+		oauth2CodeRepo:         oauth2CodeRepo,
+		oauth2ConsentRepo:      oauth2ConsentRepo,
 	}
 }
 
@@ -94,7 +96,11 @@ func (usecase *OAuth2FlowUsecase) Authorize(
 		return nil, xerror.Enrich(errordef.ErrRequestInvalid, "invalid redirect uri")
 	}
 
-	if err := usecase.validateClient(ctx, req.ClientID, "", enumdef.CRTNotRequire, req.Scope); err != nil {
+	if scopedef.HasAnyTitle[scopedef.Admin](req.Scope) && req.Scope.Contains(scopedef.OfflineAccess) {
+		return nil, xerror.Enrich(errordef.ErrOAuth2ScopeInvalid, "unable request offline-access with admin scope")
+	}
+
+	if _, err := usecase.validateClient(ctx, req.ClientID, "", enumdef.CRTNotRequire); err != nil {
 		return nil, err
 	}
 
@@ -110,13 +116,19 @@ func (usecase *OAuth2FlowUsecase) Token(
 	ctx context.Context,
 	req *dto.OAuth2TokenRequest,
 ) (*dto.OAuth2TokenResponse, error) {
+	if scopedef.HasAnyTitle[scopedef.Admin](req.Scope) && req.Scope.Contains(scopedef.OfflineAccess) {
+		return nil, xerror.Enrich(errordef.ErrOAuth2ScopeInvalid, "unable request offline-access with admin scope")
+	}
+
 	switch req.GrantType {
 	case GrantTypeAuthorizationCode:
-		return usecase.handleTokenCodeFlow(ctx, req)
+		return usecase.exchangeToken(ctx, req)
 	case GrantTypePassword:
-		return usecase.handleTokenPasswordFlow(ctx, req)
+		return usecase.passwordFlow(ctx, req)
 	case GrantTypeRefreshToken:
-		return usecase.handleTokenRefreshTokenFlow(ctx, req)
+		return usecase.refreshTokenFlow(ctx, req)
+	case GrantTypeClientCredentials:
+		return usecase.handleTokenClientCredentialsFlow(ctx, req)
 	default:
 		return nil, xerror.Enrich(errordef.ErrRequestInvalid, "not support grant type %s", req.GrantType)
 	}
@@ -126,6 +138,16 @@ func (usecase *OAuth2FlowUsecase) handleAuthorizeCodeFlow(
 	ctx context.Context,
 	req *dto.OAuth2AuthorizeRequest,
 ) (*dto.OAuth2AuthorizeResponse, error) {
+	if err := scopedef.OnlyAllow(req.Scope).HasStandard().HasUser().HasAdmin().Err(); err != nil {
+		return nil, xerror.Enrich(errordef.ErrOAuth2ScopeInvalid, err.Error())
+	}
+
+	// Authorization Code Flow with PKCE only allows readonly scope.
+	if req.CodeChallengeMethod != "" && !scopedef.IsAllReadonly(req.Scope) {
+		return nil, xerror.Enrich(errordef.ErrOAuth2ScopeInvalid,
+			"only able to request read-only scope when using Authorization Code with PKCE")
+	}
+
 	userID, err := getAuthenticatedUser(ctx, usecase.sessionRepo, usecase.oauth2SessionDomain)
 	if err != nil {
 		return nil, err
@@ -138,6 +160,18 @@ func (usecase *OAuth2FlowUsecase) handleAuthorizeCodeFlow(
 		}
 
 		return dto.NewOAuth2AuthorizeResponseRedirectToIdP(usecase.idpLoginURL, store.ID), nil
+	}
+
+	if scopedef.HasAnyTitle[scopedef.Admin](req.Scope) {
+		user, err := usecase.userRepo.GetByID(ctx, userID)
+		if err != nil {
+			return nil, errordef.ErrServer.Hide(err, "failed-to-get-user")
+		}
+
+		if user.Role != enumdef.UserRoleAdmin {
+			return nil, xerror.Enrich(errordef.ErrOAuth2ScopeInvalid,
+				"cannot request admin scopes from non-admin user")
+		}
 	}
 
 	resp, consentScope, err := usecase.validateConsentResult(ctx, userID, req, req.Scope)
@@ -156,10 +190,12 @@ func (usecase *OAuth2FlowUsecase) handleAuthorizeCodeFlow(
 	return dto.NewOAuth2AuthorizeResponseWithCode(code.Code), nil
 }
 
-func (usecase *OAuth2FlowUsecase) handleTokenCodeFlow(
+func (usecase *OAuth2FlowUsecase) exchangeToken(
 	ctx context.Context,
 	req *dto.OAuth2TokenRequest,
 ) (*dto.OAuth2TokenResponse, error) {
+	// No need validate scope in exchanging token code flow.
+
 	code, err := usecase.oauth2CodeRepo.LoadAuthorizationCode(ctx, req.Code)
 	if err != nil {
 		if errors.Is(err, errordef.ErrNotFound) {
@@ -174,12 +210,13 @@ func (usecase *OAuth2FlowUsecase) handleTokenCodeFlow(
 	}
 
 	if code.CodeChallenge == "" {
-		err := usecase.validateClient(ctx, req.ClientID, req.ClientSecret, enumdef.CRTRequire, code.Scope)
-		if err != nil {
+		if _, err := usecase.validateClient(ctx, req.ClientID, req.ClientSecret, enumdef.CRTRequire); err != nil {
 			return nil, err
 		}
 	} else {
-		if !usecase.oauth2FlowDomain.ValidateCodeChallenge(req.CodeVerifier, code.CodeChallenge, code.CodeChallengeMethod) {
+		ok := usecase.oauth2FlowDomain.ValidateCodeChallenge(
+			req.CodeVerifier, code.CodeChallenge, code.CodeChallengeMethod)
+		if !ok {
 			return nil, xerror.Enrich(errordef.ErrOAuth2InvalidGrant, "incorrect code verifier")
 		}
 	}
@@ -192,12 +229,16 @@ func (usecase *OAuth2FlowUsecase) handleTokenCodeFlow(
 	return usecase.completeRegularTokenFlow(ctx, "", code.Scope, user)
 }
 
-func (usecase *OAuth2FlowUsecase) handleTokenPasswordFlow(
+func (usecase *OAuth2FlowUsecase) passwordFlow(
 	ctx context.Context,
 	req *dto.OAuth2TokenRequest,
 ) (*dto.OAuth2TokenResponse, error) {
-	err := usecase.validateClient(ctx, req.ClientID, req.ClientSecret, enumdef.CRTRequire, req.Scope)
-	if err != nil {
+	if err := scopedef.OnlyAllow(req.Scope).HasStandard().HasUser().Err(); err != nil {
+		return nil, xerror.Enrich(errordef.ErrOAuth2ScopeInvalid, err.Error())
+	}
+
+	// TODO: Only admin client is allowed to use Password Flow.
+	if _, err := usecase.validateClient(ctx, req.ClientID, req.ClientSecret, enumdef.CRTRequire); err != nil {
 		return nil, err
 	}
 
@@ -214,34 +255,42 @@ func (usecase *OAuth2FlowUsecase) handleTokenPasswordFlow(
 	return usecase.completeRegularTokenFlow(ctx, "", req.Scope, user)
 }
 
-func (usecase *OAuth2FlowUsecase) handleTokenRefreshTokenFlow(
+func (usecase *OAuth2FlowUsecase) refreshTokenFlow(
 	ctx context.Context,
 	req *dto.OAuth2TokenRequest,
 ) (*dto.OAuth2TokenResponse, error) {
+	// No need to handle scope in refresh token flow.
+
 	// Check the current refresh token
 	cur := &tokendef.OAuth2RefreshToken{}
-	err := usecase.tokenEngine.Validate(ctx, req.RefreshToken, cur)
-	if err != nil {
+	if err := usecase.tokenEngine.Validate(ctx, req.RefreshToken, cur); err != nil {
 		return nil, xerror.Enrich(errordef.ErrOAuth2InvalidGrant, "refresh token is invalid or expired").
 			Hide(err, "failed-to-validate-refresh-token")
 	}
 
-	dcur := dto.OAuth2RefreshTokenToDomain(cur)
-	if err = usecase.validateClient(ctx, req.ClientID, req.ClientSecret, enumdef.CRTDependOnType, dcur.Scope); err != nil {
+	tokenStore, err := usecase.oauth2RefreshTokenRepo.Get(ctx, cur.SnowflakeID())
+	if err != nil {
+		return nil, xerror.Enrich(errordef.ErrOAuth2InvalidGrant, "refresh token is invalid").
+			Hide(err, "failed-to-search-refresh-token")
+	}
+
+	if tokenStore.UserID != cur.SnowflakeSub() {
+		return nil, errordef.ErrServer.Hide(errors.New("invalid user id in refresh token store"), "invalid-token")
+	}
+
+	if _, err = usecase.validateClient(ctx, req.ClientID, req.ClientSecret, enumdef.CRTDependOnType); err != nil {
 		return nil, err
 	}
 
-	// Generate the next refresh token.
-	next := usecase.oauth2TokenDomain.NextRefreshToken(dcur)
-
-	// Get the user.
-	user, err := usecase.userRepo.GetByID(ctx, next.Metadata.Subject)
+	// Get the user to generate access token.
+	user, err := usecase.userRepo.GetByID(ctx, tokenStore.UserID)
 	if err != nil {
-		return nil, errordef.ErrServer.Hide(err, "failed-to-get-user", "uid", next.Metadata.Subject)
+		return nil, errordef.ErrServer.Hide(err, "failed-to-get-user", "uid", tokenStore.UserID)
 	}
 
-	// Generate access token.
-	accessToken := usecase.oauth2TokenDomain.NewAccessToken(dcur.Metadata.Audience, dcur.Scope, user)
+	// Generate tokens.
+	accessToken := usecase.oauth2TokenDomain.NewUserAccessToken(cur.Audience, tokenStore.Scope, user)
+	next := usecase.oauth2TokenDomain.NextRefreshToken(dto.OAuth2RefreshTokenToDomain(cur))
 
 	// Serialize both tokens.
 	accessTokenString, refreshTokenString, err := usecase.serializeAccessAndRefreshTokens(ctx, accessToken, next)
@@ -250,16 +299,10 @@ func (usecase *OAuth2FlowUsecase) handleTokenRefreshTokenFlow(
 	}
 
 	// Store the seq number again.
-	err = usecase.refreshTokenRepo.UpdateByRefreshTokenID(
-		ctx,
-		dcur.Metadata.ID,
-		accessToken.Metadata.ID,
-		dcur.SequenceNumber,
-	)
-	if err != nil {
+	newStore := usecase.oauth2TokenDomain.NewRefreshTokenStore(next, accessToken)
+	if err := usecase.oauth2RefreshTokenRepo.Update(ctx, newStore); err != nil {
 		if errors.Is(err, errordef.ErrNotFound) {
-			err = usecase.refreshTokenRepo.DeleteByRefreshTokenID(ctx, dcur.Metadata.ID)
-			if err != nil {
+			if err = usecase.oauth2RefreshTokenRepo.Delete(ctx, cur.SnowflakeID()); err != nil {
 				xcontext.Logger(ctx).Warn("failed-to-delete-token", "err", err)
 			}
 
@@ -274,7 +317,39 @@ func (usecase *OAuth2FlowUsecase) handleTokenRefreshTokenFlow(
 		TokenType:    usecase.tokenEngine.Type(),
 		ExpiresIn:    usecase.getExpiresIn(accessToken.Metadata),
 		RefreshToken: refreshTokenString,
-		Scope:        dcur.Scope,
+		Scope:        tokenStore.Scope,
+	}, nil
+}
+
+func (usecase *OAuth2FlowUsecase) handleTokenClientCredentialsFlow(
+	ctx context.Context,
+	req *dto.OAuth2TokenRequest,
+) (*dto.OAuth2TokenResponse, error) {
+	if err := scopedef.OnlyAllow(req.Scope).HasAdmin().HasApp().Err(); err != nil {
+		return nil, xerror.Enrich(errordef.ErrOAuth2ScopeInvalid, err.Error())
+	}
+
+	client, err := usecase.validateClient(ctx, req.ClientID, req.ClientSecret, enumdef.CRTRequire)
+	if err != nil {
+		return nil, err
+	}
+
+	if !client.IsAdmin && scopedef.HasAnyTitle[scopedef.Admin](req.Scope) {
+		return nil, xerror.Enrich(errordef.ErrOAuth2ScopeInvalid,
+			"unable to request admin scope if client is not admin")
+	}
+
+	accessToken := usecase.oauth2TokenDomain.NewClientAccessToken("", req.Scope, client)
+	accessTokenString, err := usecase.tokenEngine.Generate(ctx, dto.OAuth2AccessTokenFromDomain(accessToken))
+	if err != nil {
+		return nil, errordef.ErrServer.Hide(err, "failed-to-generate-access-token")
+	}
+
+	return &dto.OAuth2TokenResponse{
+		AccessToken: accessTokenString,
+		TokenType:   usecase.tokenEngine.Type(),
+		ExpiresIn:   usecase.getExpiresIn(accessToken.Metadata),
+		Scope:       req.Scope,
 	}, nil
 }
 
@@ -283,14 +358,18 @@ func (usecase *OAuth2FlowUsecase) serializeAccessAndRefreshTokens(
 	accessToken *domain.OAuth2AccessToken,
 	refreshToken *domain.OAuth2RefreshToken,
 ) (string, string, error) {
+	var err error
 	accessTokenString, err := usecase.tokenEngine.Generate(ctx, dto.OAuth2AccessTokenFromDomain(accessToken))
 	if err != nil {
 		return "", "", errordef.ErrServer.Hide(err, "failed-to-generate-access-token")
 	}
 
-	refreshTokenString, err := usecase.tokenEngine.Generate(ctx, dto.OAuth2RefreshTokenFromDomain(refreshToken))
-	if err != nil {
-		return "", "", errordef.ErrServer.Hide(err, "failed-to-generate-refresh-token")
+	var refreshTokenString string
+	if refreshToken != nil {
+		refreshTokenString, err = usecase.tokenEngine.Generate(ctx, dto.OAuth2RefreshTokenFromDomain(refreshToken))
+		if err != nil {
+			return "", "", errordef.ErrServer.Hide(err, "failed-to-generate-refresh-token")
+		}
 	}
 
 	return accessTokenString, refreshTokenString, nil
@@ -302,20 +381,26 @@ func (usecase *OAuth2FlowUsecase) completeRegularTokenFlow(
 	scope scope.Scopes,
 	user *domain.User,
 ) (*dto.OAuth2TokenResponse, error) {
-	accessToken := usecase.oauth2TokenDomain.NewAccessToken(aud, scope, user)
-	refreshToken := usecase.oauth2TokenDomain.NewRefreshToken(aud, scope, user.ID)
+	accessToken := usecase.oauth2TokenDomain.NewUserAccessToken(aud, scope, user)
+
+	var refreshToken *domain.OAuth2RefreshToken
+	if scope.Contains(scopedef.OfflineAccess) {
+		refreshToken = usecase.oauth2TokenDomain.NewRefreshToken(aud, user.ID)
+	}
 
 	// Serialize both tokens.
-	accessTokenString, refreshTokenString, err := usecase.serializeAccessAndRefreshTokens(ctx, accessToken, refreshToken)
+	accessTokenString, refreshTokenString, err := usecase.serializeAccessAndRefreshTokens(
+		ctx, accessToken, refreshToken)
 	if err != nil {
 		return nil, err
 	}
 
 	// Store refresh token information.
-	err = usecase.refreshTokenRepo.Create(
-		ctx, refreshToken.Metadata.ID, accessToken.Metadata.ID, 0)
-	if err != nil {
-		return nil, errordef.ErrServer.Hide(err, "failed-to-save-refresh-token")
+	if refreshToken != nil {
+		store := usecase.oauth2TokenDomain.NewRefreshTokenStore(refreshToken, accessToken)
+		if err = usecase.oauth2RefreshTokenRepo.Create(ctx, store); err != nil {
+			return nil, errordef.ErrServer.Hide(err, "failed-to-save-refresh-token")
+		}
 	}
 
 	return &dto.OAuth2TokenResponse{
@@ -365,16 +450,11 @@ func (usecase *OAuth2FlowUsecase) validateConsentResult(
 		}
 
 		if result.Accepted {
-			if !result.Scope.LessThanOrEqual(requestedScope) {
+			fmt.Println(requestedScope.String(), "CCC", result.Scope.String())
+
+			if !requestedScope.Contains(result.Scope...) {
 				return nil, nil, xerror.Enrich(errordef.ErrOAuth2ScopeInvalid,
 					"user choose more scopes than the request from client")
-			}
-
-			for i := range requestedScope {
-				if !requestedScope[i].IsOptional() && !result.Scope.Contains(requestedScope[i]) {
-					return nil, nil, xerror.Enrich(errordef.ErrOAuth2ScopeInvalid,
-						"user denied the required scope %s", requestedScope[i])
-				}
 			}
 
 			// In case user has just consented with the requested scope (user
@@ -430,34 +510,30 @@ func (usecase *OAuth2FlowUsecase) validateClient(
 	ctx context.Context,
 	clientID snowflake.ID,
 	clientSecret string,
-	requirement enumdef.ConfidentialRequirementType,
-	requestedScope scope.Scopes,
-) error {
-	if err := usecase.oauth2ClientRepo.Validate(ctx, clientID, clientSecret, requirement, requestedScope); err != nil {
-		if errors.Is(err, errordef.ErrNotFound) {
-			return xerror.Enrich(errordef.ErrOAuth2ClientInvalid, "not found client").
-				Hide(err, "failed-to-validate-client")
+	requirement enumdef.OAuth2ClientConfidentialRequirement,
+) (*domain.OAuth2Client, error) {
+	client, err := usecase.oauth2ClientRepo.Validate(ctx, clientID, clientSecret, requirement)
+	if err != nil {
+		if errors.Is(err, errordef.ErrRequestInvalid) {
+			return nil, xerror.Enrich(errordef.ErrOAuth2ClientInvalid, "not provided client id")
 		}
 
-		if errors.Is(err, errordef.ErrOAuth2ScopeInvalid) {
-			return xerror.Enrich(errordef.ErrOAuth2ScopeInvalid,
-				"the requested scope exceeds the client allowed scope").Hide(err, "failed-to-validate-client")
+		if errors.Is(err, errordef.ErrNotFound) {
+			return nil, xerror.Enrich(errordef.ErrOAuth2ClientInvalid, "not found client")
 		}
 
 		if errors.Is(err, errordef.ErrOAuth2ClientInvalid) {
-			return xerror.Enrich(errordef.ErrOAuth2ClientInvalid, "unsupported client type").
-				Hide(err, "failed-to-validate-client")
+			return nil, xerror.Enrich(errordef.ErrOAuth2ClientInvalid, "unsupported client type")
 		}
 
 		if errors.Is(err, errordef.ErrCredentialsInvalid) {
-			return xerror.Enrich(errordef.ErrOAuth2ClientInvalid, "client credentials is incorrect").
-				Hide(err, "failed-to-validate-client")
+			return nil, xerror.Enrich(errordef.ErrOAuth2ClientInvalid, "client credentials is incorrect")
 		}
 
-		return errordef.ErrServer.Hide(err, "failed-to-validate-client")
+		return nil, errordef.ErrServer.Hide(err, "failed-to-validate-client")
 	}
 
-	return nil
+	return client, nil
 }
 
 func (usecase *OAuth2FlowUsecase) getExpiresIn(metadata *domain.OAuth2TokenMedata) int {

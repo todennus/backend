@@ -32,7 +32,7 @@ func InitializeSystem(paths ...string) (*System, error) {
 		return nil, fmt.Errorf("failed to initialize infras, err=%w", err)
 	}
 
-	repositories, err := InitializeRepositories(ctx, config, infras)
+	repositories, err := InitializeRepositories(ctx, config, infras, domains)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize repositories, err=%w", err)
 	}

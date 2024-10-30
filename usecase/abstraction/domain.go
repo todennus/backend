@@ -24,7 +24,11 @@ type OAuth2SessionDomain interface {
 		scope scope.Scopes,
 		redirectURI, state, codeChallenge, codeChallengeMethod string,
 	) *domain.OAuth2AuthorizationStore
-	NewAuthenticationResultSuccess(authID string, userID snowflake.ID, username string) *domain.OAuth2AuthenticationResult
+	NewAuthenticationResultSuccess(
+		authID string,
+		userID snowflake.ID,
+		username string,
+	) *domain.OAuth2AuthenticationResult
 	NewAuthenticationResultFailure(authID string, err string) *domain.OAuth2AuthenticationResult
 
 	NewSession(userID snowflake.ID) *domain.Session
@@ -32,9 +36,14 @@ type OAuth2SessionDomain interface {
 }
 
 type OAuth2TokenDomain interface {
-	NewAccessToken(aud string, scope scope.Scopes, user *domain.User) *domain.OAuth2AccessToken
-	NewRefreshToken(aud string, scope scope.Scopes, userID snowflake.ID) *domain.OAuth2RefreshToken
+	NewUserAccessToken(aud string, scope scope.Scopes, user *domain.User) *domain.OAuth2AccessToken
+	NewClientAccessToken(aud string, scope scope.Scopes, client *domain.OAuth2Client) *domain.OAuth2AccessToken
+	NewRefreshToken(aud string, userID snowflake.ID) *domain.OAuth2RefreshToken
 	NextRefreshToken(current *domain.OAuth2RefreshToken) *domain.OAuth2RefreshToken
+	NewRefreshTokenStore(
+		refreshToken *domain.OAuth2RefreshToken,
+		accessToken *domain.OAuth2AccessToken,
+	) *domain.OAuth2RefreshTokenStorage
 	NewIDToken(aud string, user *domain.User) *domain.OAuth2IDToken
 }
 

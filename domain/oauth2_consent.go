@@ -76,7 +76,7 @@ func (domain *OAuth2ConsentDomain) ValidateConsent(consent *OAuth2Consent, reque
 		return fmt.Errorf("%wconsent expired", errordef.ErrDomainKnown)
 	}
 
-	if !requestedScope.LessThanOrEqual(consent.Scope) {
+	if !consent.Scope.Contains(requestedScope...) {
 		return fmt.Errorf("%wrequested scope exceeds the consented scope", errordef.ErrDomainKnown)
 	}
 

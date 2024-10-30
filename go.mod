@@ -6,11 +6,12 @@ require (
 	github.com/go-chi/chi/v5 v5.1.0
 	github.com/redis/go-redis/v9 v9.7.0
 	github.com/spf13/cobra v1.8.1
-	github.com/todennus/migration v0.1.1
-	github.com/todennus/proto v0.2.0
-	github.com/todennus/shared v0.5.0
-	github.com/todennus/x v0.2.0
+	github.com/todennus/migration v0.1.2
+	github.com/todennus/proto v0.3.0
+	github.com/todennus/shared v0.6.0
+	github.com/todennus/x v0.3.0
 	github.com/xybor-x/snowflake v1.0.0
+	golang.org/x/oauth2 v0.22.0
 	google.golang.org/grpc v1.67.1
 	gorm.io/gorm v1.25.12
 )
@@ -20,7 +21,6 @@ require (
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/golang-migrate/migrate/v4 v4.18.1 // indirect
-	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/gorilla/securecookie v1.1.2 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect

@@ -31,7 +31,7 @@ func InitializeUsecases(
 		domains.OAuth2TokenDomain,
 		domains.OAuth2SessionDomain,
 		repositories.UserRepository,
-		repositories.RefreshTokenRepository,
+		repositories.OAuth2RefreshTokenRepository,
 		repositories.OAuth2ClientRepository,
 		repositories.SessionRepository,
 		repositories.OAuth2AuthorizationCodeRepository,

@@ -10,9 +10,6 @@ import (
 	"github.com/todennus/shared/config"
 )
 
-// @title Todennus API Endpoints
-// @version 1.0
-// @description This is Todennus - An Open ID Connect and OAuth2 Provider
 func App(
 	config *config.Config,
 	usecases *wiring.Usecases,
