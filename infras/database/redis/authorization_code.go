@@ -19,8 +19,8 @@ func oauth2AuthorizationCodeKey(code string) string {
 func oauth2AuthorizationStoreKey(code string) string {
 	return fmt.Sprintf("oauth2_store:%s", code)
 }
-
 func oauth2AuthenticationResultKey(code string) string {
+
 	return fmt.Sprintf("oauth2_auth:%s", code)
 }
 

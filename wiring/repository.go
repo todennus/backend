@@ -2,8 +2,6 @@ package wiring
 
 import (
 	"context"
-	"fmt"
-	"strings"
 
 	"github.com/todennus/oauth2-service/infras/database/composite"
 	"github.com/todennus/oauth2-service/infras/database/gorm"
@@ -11,13 +9,9 @@ import (
 	"github.com/todennus/oauth2-service/infras/database/redis"
 	"github.com/todennus/oauth2-service/infras/service/grpc"
 	"github.com/todennus/oauth2-service/usecase/abstraction"
-	"github.com/todennus/shared/authentication"
 	"github.com/todennus/shared/config"
-	"github.com/todennus/shared/scopedef"
 	"github.com/todennus/x/session"
 	"github.com/todennus/x/xcrypto"
-	"github.com/xybor-x/snowflake"
-	"golang.org/x/oauth2"
 )
 
 type Repositories struct {
@@ -37,24 +31,9 @@ func InitializeRepositories(
 ) (*Repositories, error) {
 	r := &Repositories{}
 
-	clientID, err := snowflake.ParseString(infras.AuthConfig.ClientID)
-	if err != nil {
-		return nil, fmt.Errorf("invalid client id: %w", err)
-	}
-	scopes := scopedef.Engine.ParseDefinedScopes(strings.Join(infras.AuthConfig.Scopes, " "))
-	tokenSource := func(ctx context.Context) oauth2.TokenSource {
-		return grpc.NewSelfAuthTokenSource(ctx, clientID, scopes, config.TokenEngine, domains.OAuth2TokenDomain)
-	}
+	r.UserRepository = grpc.NewUserRepository(infras.UsergRPCConn, infras.Auth)
 
-	r.UserRepository = grpc.NewUserRepository(
-		infras.UsergRPCConn,
-		authentication.NewGrpcAuthorization(tokenSource),
-	)
-
-	r.OAuth2ClientRepository = grpc.NewOAuth2ClientRepository(
-		infras.OAuth2ClientgRPCConn,
-		authentication.NewGrpcAuthorization(tokenSource),
-	)
+	r.OAuth2ClientRepository = grpc.NewOAuth2ClientRepository(infras.OAuth2ClientgRPCConn, infras.Auth)
 
 	r.OAuth2RefreshTokenRepository = gorm.NewOAuth2RefreshTokenRepository(infras.GormPostgres)
 
