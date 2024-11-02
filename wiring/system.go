@@ -27,7 +27,7 @@ func InitializeSystem(paths ...string) (*System, error) {
 		return nil, fmt.Errorf("failed to initialize domains, err=%w", err)
 	}
 
-	infras, err := InitializeInfras(ctx, config)
+	infras, err := InitializeInfras(ctx, config, domains)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize infras, err=%w", err)
 	}

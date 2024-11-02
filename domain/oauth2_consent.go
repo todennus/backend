@@ -27,7 +27,7 @@ type OAuth2Consent struct {
 }
 
 type OAuth2ConsentDomain struct {
-	FailureConsentExpiration time.Duration
+	ConsentSessionExpiration time.Duration
 	ConsentExpiration        time.Duration
 }
 
@@ -35,7 +35,7 @@ func NewOAuth2ConsentDomain(
 	failureExpiration, consentExpiration time.Duration,
 ) *OAuth2ConsentDomain {
 	return &OAuth2ConsentDomain{
-		FailureConsentExpiration: failureExpiration,
+		ConsentSessionExpiration: failureExpiration,
 		ConsentExpiration:        consentExpiration,
 	}
 }
@@ -45,7 +45,7 @@ func (domain *OAuth2ConsentDomain) NewConsentDeniedResult(userID, clientID snowf
 		Accepted:  false,
 		UserID:    userID,
 		ClientID:  clientID,
-		ExpiresAt: time.Now().Add(domain.FailureConsentExpiration),
+		ExpiresAt: time.Now().Add(domain.ConsentSessionExpiration),
 	}
 }
 
@@ -55,7 +55,7 @@ func (domain *OAuth2ConsentDomain) NewConsentAcceptedResult(userID, clientID sno
 		UserID:    userID,
 		ClientID:  clientID,
 		Scope:     scope,
-		ExpiresAt: time.Now().Add(domain.FailureConsentExpiration),
+		ExpiresAt: time.Now().Add(domain.ConsentSessionExpiration),
 	}
 }
 
