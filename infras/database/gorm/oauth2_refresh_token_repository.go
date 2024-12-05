@@ -6,6 +6,7 @@ import (
 	"github.com/todennus/oauth2-service/domain"
 	"github.com/todennus/oauth2-service/infras/database/model"
 	"github.com/todennus/shared/errordef"
+	"github.com/todennus/shared/xcontext"
 	"github.com/xybor-x/snowflake"
 	"gorm.io/gorm"
 )
@@ -23,7 +24,7 @@ func (repo *OAuth2RefreshTokenRepository) Get(
 	id snowflake.ID,
 ) (*domain.OAuth2RefreshTokenStorage, error) {
 	model := model.OAuth2RefreshTokenModel{}
-	if err := repo.db.WithContext(ctx).Take(&model, id).Error; err != nil {
+	if err := xcontext.DB(ctx, repo.db).Take(&model, id).Error; err != nil {
 		return nil, errordef.ConvertGormError(err)
 	}
 
@@ -34,11 +35,11 @@ func (repo *OAuth2RefreshTokenRepository) Create(
 	ctx context.Context,
 	token *domain.OAuth2RefreshTokenStorage,
 ) error {
-	return errordef.ConvertGormError(repo.db.WithContext(ctx).Create(model.NewOAuth2RefreshTokenModel(token)).Error)
+	return errordef.ConvertGormError(xcontext.DB(ctx, repo.db).Create(model.NewOAuth2RefreshTokenModel(token)).Error)
 }
 
 func (repo *OAuth2RefreshTokenRepository) Update(ctx context.Context, token *domain.OAuth2RefreshTokenStorage) error {
-	result := repo.db.WithContext(ctx).Model(&model.OAuth2RefreshTokenModel{}).
+	result := xcontext.DB(ctx, repo.db).Model(&model.OAuth2RefreshTokenModel{}).
 		Where("refresh_token_id=? AND seq=?", token.ID, token.SequenceNumber-1).
 		Updates(map[string]any{
 			"seq":             token.SequenceNumber,
@@ -55,5 +56,5 @@ func (repo *OAuth2RefreshTokenRepository) Update(ctx context.Context, token *dom
 
 func (repo *OAuth2RefreshTokenRepository) Delete(ctx context.Context, refreshTokenID snowflake.ID) error {
 	return errordef.ConvertGormError(
-		repo.db.WithContext(ctx).Delete(&model.OAuth2RefreshTokenModel{}, refreshTokenID).Error)
+		xcontext.DB(ctx, repo.db).Delete(&model.OAuth2RefreshTokenModel{}, refreshTokenID).Error)
 }
