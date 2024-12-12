@@ -8,8 +8,9 @@ require (
 	github.com/spf13/cobra v1.8.1
 	github.com/todennus/migration v0.3.0
 	github.com/todennus/proto v0.5.0
-	github.com/todennus/shared v0.8.0
-	github.com/todennus/x v0.5.0
+	github.com/todennus/shared v0.8.1
+	github.com/todennus/x v0.6.0
+	github.com/xybor-x/enum v0.3.1
 	github.com/xybor-x/snowflake v1.0.0
 	golang.org/x/oauth2 v0.22.0
 	google.golang.org/grpc v1.67.1
