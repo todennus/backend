@@ -31,7 +31,7 @@ func (repo *UserRepository) GetByID(ctx context.Context, userID snowflake.ID) (*
 		return nil, errordef.ConvertGRPCError(err)
 	}
 
-	return NewUser(resp.User), nil
+	return NewUser(resp.User)
 }
 
 func (repo *UserRepository) Validate(ctx context.Context, username string, password string) (*domain.User, error) {
@@ -41,5 +41,5 @@ func (repo *UserRepository) Validate(ctx context.Context, username string, passw
 		return nil, errordef.ConvertGRPCError(err)
 	}
 
-	return NewUser(resp.User), nil
+	return NewUser(resp.User)
 }

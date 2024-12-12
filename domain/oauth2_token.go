@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/todennus/shared/enumdef"
-	"github.com/todennus/x/enum"
 	"github.com/todennus/x/scope"
 	"github.com/xybor-x/snowflake"
 )
@@ -21,7 +20,7 @@ type OAuth2TokenMedata struct {
 type OAuth2AccessToken struct {
 	Metadata *OAuth2TokenMedata
 	Scope    scope.Scopes
-	Role     enum.Enum[enumdef.UserRole]
+	Role     enumdef.UserRole
 }
 
 type OAuth2RefreshToken struct {
