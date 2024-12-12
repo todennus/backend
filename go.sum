@@ -99,10 +99,12 @@ github.com/todennus/migration v0.3.0 h1:U3AUkz0Z4Gzz80CZHQ/IplFNIwWjMQOsqRUIeGbe
 github.com/todennus/migration v0.3.0/go.mod h1:ECkfyMSQ+Yxc8BMk9awyRL5bIVCfFwEl6AdYQrLvj1U=
 github.com/todennus/proto v0.5.0 h1:8RnpiQ3BobDCO9/1naUwwf7b9kwsiiSIjwilwB9sE9k=
 github.com/todennus/proto v0.5.0/go.mod h1:KJntlZG3lvSZTF954xU/D4TLIcE0wptBTYv5PbmOSq8=
-github.com/todennus/shared v0.8.0 h1:2lyQq+a8U1fz9MQjJAdrMxhAwgj5IHKUQKFSRXjdetc=
-github.com/todennus/shared v0.8.0/go.mod h1:fZBLOneryCOmcjpgL270rhez9WShF3wwC9nDGfFpf7U=
-github.com/todennus/x v0.5.0 h1:VqVOPmVFltF/0fYeusKUZdPZ1mrjQLcjUG9s40FmZEI=
-github.com/todennus/x v0.5.0/go.mod h1:m2SrA8JvtXdFpCjxT0Q8Kesi+izQwIr9O+WcWxrtpVk=
+github.com/todennus/shared v0.8.1 h1:0MEpg9fNVuaVK3ciY3VuwkSgczyNq2B68MLs4qXJEBY=
+github.com/todennus/shared v0.8.1/go.mod h1:AlUd4QCvUeUomnQC6SLw2rNHbP3l1ziJiqksUBdrXrU=
+github.com/todennus/x v0.6.0 h1:HdKZdjrAOV7r+Wax/Ft8f6A8MoV+gp423fe7oyEkMPE=
+github.com/todennus/x v0.6.0/go.mod h1:m2SrA8JvtXdFpCjxT0Q8Kesi+izQwIr9O+WcWxrtpVk=
+github.com/xybor-x/enum v0.3.1 h1:aKXQLafFiV9NGA5IsZooWsLYe2RWqb+dcrTXrGeCSEA=
+github.com/xybor-x/enum v0.3.1/go.mod h1:cBN02xug2E1c3UJjZsF5eBg71usBXxX2ePFUFNOFs9o=
 github.com/xybor-x/snowflake v1.0.0 h1:cpBLbuBeUrHeBN7behThldVqJ0ZTtQD/M87Vk67Xpl4=
 github.com/xybor-x/snowflake v1.0.0/go.mod h1:oriPbmMgpBuLkAU1kcwP+JWWvis7NWWN5YAM/B2J95w=
 go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.54.0 h1:TT4fX+nBOA/+LUkobKGW1ydGcn+G3vRw9+g5HwCphpk=
